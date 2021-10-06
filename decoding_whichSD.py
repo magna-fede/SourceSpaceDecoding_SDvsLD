@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Sep 30 14:37:27 2021
+
+@author: fm02
+"""
+
+
 #!/usr/bin/env python
 # coding: utf-8
 
@@ -61,18 +69,16 @@ def trials_no_category(row):
     
     return row
         
-SDLD_scores = []
-SDLD_coefficients = []
+SDvsSD_scores = []
+SDvsSD_coefficients = []
 cat_scores = []
 
 for sub in np.arange(0  ,18):
+    print(f'Analysing participant number: {sub}')
     # import the dataset containing 120 categories (6 ROIs * 4 tasks *5 categories)
     # each key contains an array with size (number of trials * number of vertices * time points)
     with open(f'//cbsu/data/Imaging/hauk/users/fm02/dataSDLD/activities_sub_{sub}.json', 'rb') as f:
         output = pickle.load(f)
-    
-    # with open(f'C:/Users/User/OwnCloud/DSR/dataSDLD/activities_sub_{sub}.json', 'rb') as f:
-    #     output = pickle.load(f)    
     
     kk = list(output.keys())
     
@@ -213,14 +219,11 @@ for sub in np.arange(0  ,18):
     print(lds.shape) 
     print(frts.shape)
     print(odrs.shape)
-    # The above shapes refletc (n_trials * n_vertices * timpoints), as we can see the number of trials is similar, and we have the same number of vertices and timepoints (aka our brain signal) for each trial.
-    
-    # We now want to group each vertex with the ROI they belong to (as we lost this information during the manipulation of the data).
     
     vertices = []
     
-    for i in range(trials_mlk_ignore[trials_mlk_ignore['trial']==0]['data'].shape[0]):
-        vertices.append(trials_mlk_ignore[trials_mlk_ignore['trial']==0]['data'][i].shape[0])
+    for trial in trials_mlk_ignore['data'][trials_mlk_ignore['trial']==0]:
+        vertices.append(trial.shape[0])
     
     print([v for v in vertices])
     
@@ -238,19 +241,19 @@ for sub in np.arange(0  ,18):
     # contrasting each semantic decision task vs lexical decision task
     # check when and where areas are sensitive to task difference on average
     
-    X_mlk = np.concatenate([mlks , lds])
-    y_mlk = np.array(['milk']*len(mlks) + ['LD']*len(lds))
+    X_mlkfrt = np.concatenate([mlks , frts])
+    y_mlkfrt = np.array(['milk']*len(mlks) + ['fruit']*len(frts))
     
-    X_frt = np.concatenate([frts , lds])
-    y_frt = np.array(['fruit']*len(frts) + ['LD']*len(lds))
+    X_frtodr = np.concatenate([frts , odrs])
+    y_frtodr = np.array(['fruit']*len(frts) + ['odour']*len(odrs))
     
-    X_odr = np.concatenate([odrs , lds])
-    y_odr = np.array(['odour']*len(odrs) + ['LD']*len(lds))
+    X_odrmlk = np.concatenate([odrs , mlks])
+    y_odrmlk = np.array(['odour']*len(odrs) + ['milk']*len(mlks))
     
     
-    X_mlk, y_mlk = shuffle(X_mlk, y_mlk, random_state=0)
-    X_frt, y_frt = shuffle(X_frt, y_frt, random_state=0)
-    X_odr, y_odr = shuffle(X_odr, y_odr, random_state=0)
+    X_mlkfrt, y_mlkfrt = shuffle(X_mlkfrt, y_mlkfrt, random_state=0)
+    X_frtodr, y_frtodr = shuffle(X_frtodr, y_frtodr, random_state=0)
+    X_odrmlk, y_odrmlk = shuffle(X_odrmlk, y_odrmlk, random_state=0)
     
     # We create and run the model. We expect the model to perform at chance before the presentation of the stimuli (no ROI should be sensitive to task/semantics demands before the presentation of a word).
     
@@ -261,214 +264,57 @@ for sub in np.arange(0  ,18):
     time_decod = SlidingEstimator(clf, scoring='roc_auc')
     
     # Run cross-validated decoding analyses:
-    scores_mlk = cross_val_multiscore(time_decod, X_mlk, y_mlk, cv=5)
-    scores_frt = cross_val_multiscore(time_decod, X_frt, y_frt, cv=5)
-    scores_odr = cross_val_multiscore(time_decod, X_odr, y_odr, cv=5)
+    scores_mlkfrt = cross_val_multiscore(time_decod, X_mlkfrt, y_mlkfrt, cv=5)
+    scores_frtodr = cross_val_multiscore(time_decod, X_frtodr, y_frtodr, cv=5)
+    scores_odrmlk = cross_val_multiscore(time_decod, X_odrmlk, y_odrmlk, cv=5)
     
-    scores = pd.DataFrame(list(zip(scores_mlk, scores_frt, scores_odr)),
-                          columns=['milk','fruit','odour'])
-    SDLD_scores.append(scores)
+    scores = pd.DataFrame(list(zip(scores_mlkfrt, scores_frtodr, scores_odrmlk)),
+                          columns=['milkVSfruit',
+                                   'fruitVSodour', 
+                                   'odourVSmilk'])
+    SDvsSD_scores.append(scores)
     
     # HEY!
     # thanks mne.
     # https://github.com/mne-tools/mne-python/blob/maint/0.23/mne/decoding/base.py#L291-L355
     # line 93
     # patterns does already apply Haufe's trick
-    time_decod.fit(X_mlk, y_mlk)
-    patterns_mlk = get_coef(time_decod, 'patterns_', inverse_transform=True)
+    time_decod.fit(X_mlkfrt, y_mlkfrt)
+    patterns_mlkfrt = get_coef(time_decod, 'patterns_', inverse_transform=True)
     
-    time_decod.fit(X_frt, y_frt)
-    patterns_frt = get_coef(time_decod, 'patterns_', inverse_transform=True)
+    time_decod.fit(X_frtodr, y_frtodr)
+    patterns_frtodr = get_coef(time_decod, 'patterns_', inverse_transform=True)
     
-    time_decod.fit(X_odr, y_odr)
-    patterns_odr = get_coef(time_decod, 'patterns_', inverse_transform=True)
+    time_decod.fit(X_odrmlk, y_odrmlk)
+    patterns_odrmlk = get_coef(time_decod, 'patterns_', inverse_transform=True)
     
     # this df has 4 columns:
         # one codes to which ROI the vertex belongs to
         # the other three refers to each task.
 
-    df = pd.DataFrame(zip(ROI_vertices, patterns_mlk, patterns_frt, patterns_odr),columns=['ROI','milk', 'fruit', 'odour'])
+    df = pd.DataFrame(zip(ROI_vertices, 
+                          patterns_mlkfrt, 
+                          patterns_frtodr, 
+                          patterns_odrmlk),
+                      columns=['ROI',
+                               'milkVSfruit',
+                               'fruitVSodour', 
+                               'odourVSmilk'])
 
     
     avg = []
     for i in range(len(df)):
-        avg.append(np.mean([df['milk'][i],df['fruit'][i],df['odour'][i]],0))
+        avg.append(np.mean([df['milkVSfruit'][i],
+                            df['fruitVSodour'][i],
+                            df['odourVSmilk'][i]],0))
     df['avg'] = avg
 
     
-    SDLD_coefficients.append(df)
+    SDvsSD_coefficients.append(df)
     
-    # ## Change topic
-    ########## NOT WORKING RIGHT NOW!
-    # get back to this in the future
-    
-    # Let's know change topic and try to decode the word semantic category from the task. Arguably, if there is a difference in the information available when doing lexical decision task vs. when doing a semantic decision task, the accuracy should differ in the two tasks.
-    
-    
-    # lds = []
-    # y_lds = []
-    # for cat in kk2:
-    #     scat = trials_ld[trials_ld['category']==cat]
-    #     ld_list = []
-    #     for i in range(scat['trial'].max()):
-    #         new = scat [(scat ['category']==cat) & (scat ['trial']==i)]
-    #         ld_list.append(np.concatenate(new['data'].values))
-    #     while len(ld_list)%4 != 0:
-    #             ld_list.pop()
-    #     new_ldList = list(chunks(ld_list, 4))
-    #     new_lds = []
-    #     for nt in new_ldList:
-    #         new_lds.append(np.mean(nt,0)) 
-    #     lds.extend(new_lds)    
-    #     y_lds.extend([cat]*len(new_lds))    
-
-    # mlks = []
-    # y_mlks = []
-    # for cat in kk2:
-    #     scat = trials_mlk[trials_mlk['category']==cat]
-    #     mlk_list = []
-    #     for i in range(scat['trial'].max()):
-    #         new = scat [(scat ['category']==cat) & (scat ['trial']==i)]
-    #         mlk_list.append(np.concatenate(new['data'].values))
-    #     while len(mlk_list)%4 != 0:
-    #             mlk_list.pop()
-    #     new_mlkList = list(chunks(mlk_list, 4))
-    #     new_mlks = []
-    #     for nt in new_mlkList:
-    #         new_mlks.append(np.mean(nt,0)) 
-    #     mlks.extend(new_mlks)    
-    #     y_mlks.extend([cat]*len(new_mlks))    
-    
-    # frts = []
-    # y_frts = []
-    # for cat in kk2:
-    #     scat = trials_frt[trials_frt['category']==cat]
-    #     frt_list = []
-    #     for i in range(scat['trial'].max()):
-    #         new = scat [(scat ['category']==cat) & (scat ['trial']==i)]
-    #         frt_list.append(np.concatenate(new['data'].values))
-    #     while len(frt_list)%4 != 0:
-    #             frt_list.pop()
-    #     new_frtList = list(chunks(frt_list, 4))
-    #     new_frts = []
-    #     for nt in new_frtList:
-    #         new_frts.append(np.mean(nt,0)) 
-    #     frts.extend(new_frts)    
-    #     y_frts.extend([cat]*len(new_frts))    
-        
-    # odrs = []
-    # y_odrs = []
-    # for cat in kk2:
-    #     scat = trials_odr[trials_odr['category']==cat]
-    #     odr_list = []
-    #     for i in range(scat['trial'].max()):
-    #         new = scat [(scat ['category']==cat) & (scat ['trial']==i)]
-    #         odr_list.append(np.concatenate(new['data'].values))
-    #     while len(odr_list)%4 != 0:
-    #             odr_list.pop()
-    #     new_odrList = list(chunks(odr_list, 4))
-    #     new_odrs = []
-    #     for nt in new_odrList:
-    #         new_odrs.append(np.mean(nt,0)) 
-    #     odrs.extend(new_odrs)    
-    #     y_odrs.extend([cat]*len(new_odrs))    
-    
- 
-    
-    # X_lds = np.array(lds)
-    
-    # X_mlks = np.array(mlks)
-    
-    # X_frts = np.array(frts)
-    
-    # X_odrs = np.array(odrs)
-    
-    # X_allSD = np.array([lds + mlks + odrs]).reshape(len,583,300)
-    # y_allSD = np.array([y_lds + y_mlks + y_odrs]).reshape(178)
-    
-    # X_lds, y_lds = shuffle(X_lds, y_lds)
-    
-    # X_mlks, y_mlks = shuffle(X_mlks, y_mlks)
-    
-    # X_frts, y_frts = shuffle(X_frts, y_frts)
-    
-    # X_odrs, y_odrs = shuffle(X_odrs, y_odrs)
-    
-    # X_allSD, y_allSD = shuffle(X_allSD, y_allSD)
-    
-    # prepare a series of classifier applied at each time sample
-    # change the model because now it's not binary anymore
-    # we need muticlass classifier
-    # also need to change the scoring. for now let's do accuracy
-    
-    # clf = make_pipeline(StandardScaler(),  # z-score normalization
-    #                     SelectKBest(f_classif, k='all'),  # select features for speed
-    #                     LinearDiscriminantAnalysis(solver="svd"))
-    # time_decod = SlidingEstimator(clf, scoring='accuracy')
-    
-    # scores_lds = cross_val_multiscore(time_decod, X_lds, y_lds, cv=5)
-    # scores_mlks = cross_val_multiscore(time_decod, X_mlks, y_mlks, cv=5)
-    # scores_frts = cross_val_multiscore(time_decod, X_frts, y_frts, cv=5)
-    # scores_odrs = cross_val_multiscore(time_decod, X_odrs, y_odrs, cv=5)
-    
-    # scores_allSD = cross_val_multiscore(time_decod, X_allSD, y_allSD, cv=5)
-    
-    # df_cat = pd.DataFrame(list(zip(scores_lds,
-    #                                scores_mlks,
-    #                                scores_frts,
-    #                                scores_odrs)),
-    #                       columns =['scores_lds','scores_mlks',
-    #                                'scores_frts','scores_odrs'])
-    # cat_scores.append(df_cat)
-    # Plot average decoding scores of 5 splits for each model
-    # fig, ax = plt.subplots(1);
-    # ax.plot(np.arange(-300,900,4), scores_lds.mean(0), label='average score');
-    # ax.axhline(.2, color='k', linestyle='--', label='chance');
-    # ax.axvline(0, color='k');
-    # ax.set_title('Lexical Decision - Accuracy in predicting word category')
-    # plt.legend();
-    
-    # fig, ax = plt.subplots(1);
-    # ax.plot(np.arange(-300,900,4), scores_mlks.mean(0), label='average score');
-    # ax.axhline(.2, color='k', linestyle='--', label='chance');
-    # ax.axvline(0, color='k');
-    # ax.set_title('Semantic Decision (milk) - Accuracy in predicting word category')
-    # plt.legend();
-    
-    # fig, ax = plt.subplots(1);
-    # ax.plot(np.arange(-300,900,4), scores_frts.mean(0), label='average score');
-    # ax.axhline(.2, color='k', linestyle='--', label='chance');
-    # ax.axvline(0, color='k');
-    # ax.set_title('Semantic Decision (fruit) - Accuracy in predicting word category')
-    # plt.legend();
-    
-    # fig, ax = plt.subplots(1);
-    # ax.plot(np.arange(-300,900,4), scores_odrs.mean(0), label='average score');
-    # ax.axhline(.2, color='k', linestyle='--', label='chance');
-    # ax.axvline(0, color='k');
-    # ax.set_title('Semantic Decision (odours) - Accuracy in predicting word category')
-    # plt.legend();
-    
-    # fig, ax = plt.subplots(1);
-    # ax.plot(np.arange(-300,900,4), scores_allSD.mean(0), label='average score');
-    # ax.axhline(.2, color='k', linestyle='--', label='chance');
-    # ax.axvline(0, color='k');
-    # ax.set_title('All Semantic Decisions - Accuracy in predicting word category')
-    # plt.legend();
-
-
-
-
-# df_to_export = pd.DataFrame(SDLD_scores)
-# with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/0923_SDLD_scores.P",
-#           'wb') as outfile:
-#     pickle.dump(df_to_export,outfile)
-    
-# df_to_export = pd.DataFrame(SDLD_coefficients)
-# with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/0923_SDLD_coefficients.P",
-#           'wb') as outfile:
-#     pickle.dump(df_to_export,outfile)
-    
-    
-
- 
+df_to_export = pd.DataFrame(SDvsSD_scores)
+with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1005_SDvsSD_avg_scores.P", 'wb') as outfile:
+    pickle.dump(df_to_export,outfile)
+df_to_export = pd.DataFrame(SDvsSD_coefficients)
+with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1005_SDvsSD_coefficients.P", 'wb') as outfile:
+    pickle.dump(df_to_export,outfile)
