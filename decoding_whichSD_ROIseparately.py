@@ -1,3 +1,4 @@
+
 # -*- coding: utf-8 -*-
 """
 Created on Tue Oct  5 17:48:16 2021
@@ -205,15 +206,15 @@ for sub in np.arange(0  ,18):
     list_frt_scores.append(scores_frtodr)
     list_odr_scores.append(scores_odrmlk)
     
-df_to_export = pd.DataFrame(list_avg_scores)
-with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1005_SDvsSD_ROIs_avg_scores.P", 'wb') as outfile:
-    pickle.dump(df_to_export,outfile)
-df_to_export = pd.DataFrame(list_mlk_scores)
-with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1005_SDvsSD_ROIs_mlkfrt_scores.P", 'wb') as outfile:
-    pickle.dump(df_to_export,outfile)
-df_to_export = pd.DataFrame(list_frt_scores)
-with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1005_SDvsSD_ROIs_frtodr_scores.P", 'wb') as outfile:
-    pickle.dump(df_to_export,outfile)
-df_to_export = pd.DataFrame(list_odr_scores)
-with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1005_SDvsSD_ROIs_odrmlk_scores.P", 'wb') as outfile:
-    pickle.dump(df_to_export,outfile)
+# df_to_export = pd.DataFrame(list_avg_scores)
+# with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1005_SDvsSD_ROIs_avg_scores.P", 'wb') as outfile:
+#     pickle.dump(df_to_export,outfile)
+# df_to_export = pd.DataFrame(list_mlk_scores)
+# with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1005_SDvsSD_ROIs_mlkfrt_scores.P", 'wb') as outfile:
+#     pickle.dump(df_to_export,outfile)
+# df_to_export = pd.DataFrame(list_frt_scores)
+# with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1005_SDvsSD_ROIs_frtodr_scores.P", 'wb') as outfile:
+#     pickle.dump(df_to_export,outfile)
+# df_to_export = pd.DataFrame(list_odr_scores)
+# with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1005_SDvsSD_ROIs_odrmlk_scores.P", 'wb') as outfile:
+#     pickle.dump(df_to_export,outfile)

@@ -9,14 +9,9 @@ Created on Thu Sep 30 14:37:27 2021
 #!/usr/bin/env python
 # coding: utf-8
 
-# # Data for science Residency Project
-# 
-# In this project I will apply some of the notions lernt during the course to try to predict which brain regions and at which time point are sensitive to the different amount of semantic resources necessary for completing two different tasks. To do this, we will look at the source estimated activity of 6 Regions of Interest (ROIs) for one participant. The two tasks (lexical decision and semantic decision) are belived to vary in the amount of semantic resources necessary for completing the task. The activity is related to -300 ms to 900 ms post stimulus presentation.
-# We will try to predict to which task each trial belongs to and, after that, we will try to understand which ROI carries is sensitive to different semantics demands, by looking at the average and the maximum coefficient in each ROI at each time point.
 
 # Import some relevant packages.
-# mne is a package used in the analysis of MEG and EEG brain data. We are importing some functions useful for decoding brain signal.
-# 
+
 
 import numpy as np
 import pandas as pd
@@ -30,7 +25,6 @@ from sklearn.feature_selection import SelectKBest, f_classif
 from sklearn.linear_model import LogisticRegression
 from sklearn.utils import shuffle
 
-# mne is a library for analysis of MEG/EEG brain data
 
 from mne.decoding import (cross_val_multiscore, LinearModel, SlidingEstimator,
                           get_coef)
@@ -312,9 +306,9 @@ for sub in np.arange(0  ,18):
     
     SDvsSD_coefficients.append(df)
     
-df_to_export = pd.DataFrame(SDvsSD_scores)
-with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1005_SDvsSD_avg_scores.P", 'wb') as outfile:
-    pickle.dump(df_to_export,outfile)
-df_to_export = pd.DataFrame(SDvsSD_coefficients)
-with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1005_SDvsSD_coefficients.P", 'wb') as outfile:
-    pickle.dump(df_to_export,outfile)
+# df_to_export = pd.DataFrame(SDvsSD_scores)
+# with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1005_SDvsSD_avg_scores.P", 'wb') as outfile:
+#     pickle.dump(df_to_export,outfile)
+# df_to_export = pd.DataFrame(SDvsSD_coefficients)
+# with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1005_SDvsSD_coefficients.P", 'wb') as outfile:
+#     pickle.dump(df_to_export,outfile)

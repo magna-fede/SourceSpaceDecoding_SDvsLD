@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # -*- coding: utf-8 -*-
 """
 Created on Thu Sep 16 15:54:00 2021
@@ -152,4 +153,4 @@ plt.axvline(200, color='k', linewidth=1, alpha=0.3);
 plt.axhline(.5, color='k', linestyle='--', label='chance');
 plt.title('Decoding AVG(SD)vsLD accuracy of each ROI separately')
 plt.legend(kkROI);
-plt.show();
+plt.show()
