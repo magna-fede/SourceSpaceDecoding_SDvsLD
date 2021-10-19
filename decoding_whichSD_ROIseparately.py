@@ -23,6 +23,7 @@ import pandas as pd
 import pickle
 import seaborn as sns
 import matplotlib.pyplot as plt
+import random
 
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
@@ -33,6 +34,11 @@ from sklearn.utils import shuffle
 from mne.decoding import (cross_val_multiscore, LinearModel, SlidingEstimator,
                           get_coef)
 
+def chunks(l, n):
+    """Yield successive n-sized chunks from l."""
+    for i in range(0, len(l), n):
+        yield l[i:i + n]
+
 # initialise lists where we'll store output
 
 list_avg_scores = []
@@ -41,9 +47,14 @@ list_frt_scores = []
 list_odr_scores = []
 
 for sub in np.arange(0  ,18):
+    print(sub)
     # import the dataset containing 120 categories (6 ROIs * 4 tasks *5 categories)
     # each key contains an array with size (number of trials * number of vertices * time points)
-    with open(f'//cbsu/data/Imaging/hauk/users/fm02/dataSDLD/activities_sub_{sub}.json', 'rb') as f:
+    
+    # with open(f'//cbsu/data/Imaging/hauk/users/fm02/dataSDLD/activities_sub_{sub}.json', 'rb') as f:
+    #     output = pickle.load(f)
+    
+    with open(f'//imaging/hauk/users/fm02/dataSDLD/activities_sub_{sub}.json', 'rb') as f:
         output = pickle.load(f)
     
     kk = list(output.keys())
@@ -145,8 +156,37 @@ for sub in np.arange(0  ,18):
         frts[ROI] = trials_frt['data'][trials_frt['ROI']==ROI].reset_index(drop=True)
         odrs[ROI] = trials_odr['data'][trials_odr['ROI']==ROI].reset_index(drop=True)
         # lds[ROI] = trials_ld['data'][trials_ld['ROI']==ROI].reset_index(drop=True)
+    
+    mlks_avg = pd.DataFrame(columns=kkROI)
+    frts_avg = pd.DataFrame(columns=kkROI)
+    odrs_avg = pd.DataFrame(columns=kkROI)
+    
+    # now let's average 4 trials together
+    for ROI in kkROI:
+        for i,tsk in enumerate([frts[ROI],mlks[ROI],odrs[ROI]]):
+        # make sure the number of trials is a multiple of 4, or eliminate excess
+            tsk = np.stack(np.array(tsk))
+            while len(tsk)%4 != 0:
+                tsk = np.delete(tsk,-1,axis=0)
+            # create random groups of trials
+            # note that np.random.shuffle operates on the first axis,
+            # meaning that the order on axis 1,2 is untouched (I hope)
+            np.random.shuffle(tsk)
+            new_tsk = list(chunks(tsk, 4))
+            new_trials = []
+            # calculate average for each timepoint of the 4 trials
+            for nt in new_tsk:
+                new_trials.append(np.mean(nt,0))
+            # assign group it in the corresponding task
+
+            if i==0:
+                frts_avg[ROI] = new_trials
+            elif i==1:
+                mlks_avg[ROI] = new_trials
+            elif i==2:
+                odrs_avg[ROI] = new_trials
         
-        
+            
     # prepare a series of classifier applied at each time sample
     clf = make_pipeline(StandardScaler(),  # z-score normalization
                         SelectKBest(f_classif, k='all'),  # keep all vertices
@@ -161,17 +201,17 @@ for sub in np.arange(0  ,18):
     # for each roi, create and apply the classifier
     for roi in kkROI:
         # create X matrix for each SD vs LD
-        X_mlkfrt = np.concatenate([np.stack(mlks[roi]),np.stack(frts[roi])])
-        y_mlkfrt = np.array(['milk']*np.stack(mlks[roi]).shape[0] + 
-                            ['fruit']*np.stack(frts[roi]).shape[0])
+        X_mlkfrt = np.concatenate([np.stack(mlks_avg[roi]),np.stack(frts_avg[roi])])
+        y_mlkfrt = np.array(['milk']*np.stack(mlks_avg[roi]).shape[0] + 
+                            ['fruit']*np.stack(frts_avg[roi]).shape[0])
         
-        X_frtodr = np.concatenate([np.stack(frts[roi]),np.stack(odrs[roi])])
-        y_frtodr = np.array(['fruit']*np.stack(frts[roi]).shape[0] + 
-                            ['odour']*np.stack(odrs[roi]).shape[0])
+        X_frtodr = np.concatenate([np.stack(frts_avg[roi]),np.stack(odrs_avg[roi])])
+        y_frtodr = np.array(['fruit']*np.stack(frts_avg[roi]).shape[0] + 
+                            ['odour']*np.stack(odrs_avg[roi]).shape[0])
         
-        X_odrmlk = np.concatenate([np.stack(odrs[roi]),np.stack(mlks[roi])])
-        y_odrmlk = np.array(['odour']*np.stack(odrs[roi]).shape[0] + 
-                            ['milk']*np.stack(mlks[roi]).shape[0])
+        X_odrmlk = np.concatenate([np.stack(odrs_avg[roi]),np.stack(mlks_avg[roi])])
+        y_odrmlk = np.array(['odour']*np.stack(odrs_avg[roi]).shape[0] + 
+                            ['milk']*np.stack(mlks_avg[roi]).shape[0])
         
         # randomise order (or otherwirse SD always before LD)
         # not sure if this is necessary, but it's proably worth to be sure
@@ -207,14 +247,28 @@ for sub in np.arange(0  ,18):
     list_odr_scores.append(scores_odrmlk)
     
 # df_to_export = pd.DataFrame(list_avg_scores)
-# with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1005_SDvsSD_ROIs_avg_scores.P", 'wb') as outfile:
+# with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1015_SDvsSD_ROIs_avg_scores.P", 'wb') as outfile:
 #     pickle.dump(df_to_export,outfile)
 # df_to_export = pd.DataFrame(list_mlk_scores)
-# with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1005_SDvsSD_ROIs_mlkfrt_scores.P", 'wb') as outfile:
+# with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1015_SDvsSD_ROIs_mlkfrt_scores.P", 'wb') as outfile:
 #     pickle.dump(df_to_export,outfile)
 # df_to_export = pd.DataFrame(list_frt_scores)
-# with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1005_SDvsSD_ROIs_frtodr_scores.P", 'wb') as outfile:
+# with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1015_SDvsSD_ROIs_frtodr_scores.P", 'wb') as outfile:
 #     pickle.dump(df_to_export,outfile)
 # df_to_export = pd.DataFrame(list_odr_scores)
-# with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1005_SDvsSD_ROIs_odrmlk_scores.P", 'wb') as outfile:
+# with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1015_SDvsSD_ROIs_odrmlk_scores.P", 'wb') as outfile:
 #     pickle.dump(df_to_export,outfile)
+
+df_to_export = pd.DataFrame(list_avg_scores)
+with open("//imaging/hauk/users/fm02/first_output/1015_SDvsSD_ROIs_avg_scores.P", 'wb') as outfile:
+    pickle.dump(df_to_export,outfile)
+df_to_export = pd.DataFrame(list_mlk_scores)
+with open("//imaging/hauk/users/fm02/first_output/1015_SDvsSD_ROIs_mlkfrt_scores.P", 'wb') as outfile:
+    pickle.dump(df_to_export,outfile)
+df_to_export = pd.DataFrame(list_frt_scores)
+with open("//imaging/hauk/users/fm02/first_output/1015_SDvsSD_ROIs_frtodr_scores.P", 'wb') as outfile:
+    pickle.dump(df_to_export,outfile)
+df_to_export = pd.DataFrame(list_odr_scores)
+with open("//imaging/hauk/users/fm02/first_output/1015_SDvsSD_ROIs_odrmlk_scores.P", 'wb') as outfile:
+    pickle.dump(df_to_export,outfile)
+    

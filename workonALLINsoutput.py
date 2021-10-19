@@ -26,10 +26,16 @@ def rms(example):
     return rms_example 
 
 
-with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/0923_SDLD_scores.P", 'rb') as f:
+# with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/0923_SDLD_scores.P", 'rb') as f:
+#      SDLD_scores = pickle.load(f)
+
+# with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/0923_SDLD_coefficients.P", 'rb') as f:
+#      SDLD_coefficients = pickle.load(f)
+
+with open("//imaging/hauk/users/fm02/first_output/0923_SDLD_scores.P", 'rb') as f:
      SDLD_scores = pickle.load(f)
 
-with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/0923_SDLD_coefficients.P", 'rb') as f:
+with open("//imaging/hauk/users/fm02/first_output/0923_SDLD_coefficients.P", 'rb') as f:
      SDLD_coefficients = pickle.load(f)
 
 

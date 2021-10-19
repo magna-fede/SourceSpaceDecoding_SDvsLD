@@ -15,25 +15,37 @@ import seaborn as sns
 
 # load scores result from previous script
 
-with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1005_SDvsSD_ROIs_avg_scores.P", 'rb') as f:
+# with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1005_SDvsSD_ROIs_avg_scores.P", 'rb') as f:
+#      avg_scores = pickle.load(f)
+
+# with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1005_SDvsSD_ROIs_mlkfrt_scores.P", 'rb') as f:
+#      mlk_scores = pickle.load(f)
+     
+# with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1005_SDvsSD_ROIs_frtodr_scores.P", 'rb') as f:
+#      frt_scores = pickle.load(f)
+     
+# with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1005_SDvsSD_ROIs_odrmlk_scores.P", 'rb') as f:
+#      odr_scores = pickle.load(f)
+
+with open("//imaging/hauk/users/fm02/first_output/1015_SDvsSD_ROIs_avg_scores.P", 'rb') as f:
      avg_scores = pickle.load(f)
 
-with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1005_SDvsSD_ROIs_mlkfrt_scores.P", 'rb') as f:
-     mlk_scores = pickle.load(f)
+with open("//imaging/hauk/users/fm02/first_output/1015_SDvsSD_ROIs_mlkfrt_scores.P", 'rb') as f:
+     mlkfrt_scores = pickle.load(f)
      
-with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1005_SDvsSD_ROIs_frtodr_scores.P", 'rb') as f:
-     frt_scores = pickle.load(f)
+with open("//imaging/hauk/users/fm02/first_output/1015_SDvsSD_ROIs_frtodr_scores.P", 'rb') as f:
+     frtodr_scores = pickle.load(f)
      
-with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1005_SDvsSD_ROIs_odrmlk_scores.P", 'rb') as f:
-     odr_scores = pickle.load(f)
+with open("//imaging/hauk/users/fm02/first_output/1015_SDvsSD_ROIs_odrmlk_scores.P", 'rb') as f:
+     odrmlk_scores = pickle.load(f)
      
 kk2 = ['visual', 'hand', 'hear', 'neutral','emotional']
 kkROI = ['lATL', 'rATL', 'AG', 'PTC', 'IFG', 'PVA']
 
 # intilaise participant's average for each classifier
-participants_mlk = pd.DataFrame(index=np.arange(0,18),columns=kkROI)
-participants_frt = pd.DataFrame(index=np.arange(0,18),columns=kkROI)
-participants_odr = pd.DataFrame(index=np.arange(0,18),columns=kkROI)
+participants_mlkfrt = pd.DataFrame(index=np.arange(0,18),columns=kkROI)
+participants_frtodr = pd.DataFrame(index=np.arange(0,18),columns=kkROI)
+participants_odrmlk = pd.DataFrame(index=np.arange(0,18),columns=kkROI)
 
 # get average scores for each ROI for each participant
 # remember for each participant we have 5 cv, want average
@@ -41,23 +53,25 @@ participants_odr = pd.DataFrame(index=np.arange(0,18),columns=kkROI)
 # loop over ROIs
 for roi in kkROI:
     # index is the same for all the tasks
-    for ind in mlk_scores.index:
-        participants_mlk[roi][ind] = np.mean(mlk_scores[roi][ind],0)
-        participants_frt[roi][ind] = np.mean(frt_scores[roi][ind],0)
-        participants_odr[roi][ind] = np.mean(odr_scores[roi][ind],0)
+    for ind in mlkfrt_scores.index:
+        participants_mlkfrt[roi][ind] = np.mean(mlkfrt_scores[roi][ind],0)
+        participants_frtodr[roi][ind] = np.mean(frtodr_scores[roi][ind],0)
+        participants_odrmlk[roi][ind] = np.mean(odrmlk_scores[roi][ind],0)
 
 
 avg_all = pd.DataFrame(index=range(300),columns=kkROI)
 
 for roi in kkROI:  
-    sns.lineplot(x=np.arange(-300,900,4), y=np.mean(participants_mlk[roi],0))
+    sns.lineplot(x=np.arange(-300,900,4), y=np.mean(participants_mlkfrt[roi],0))
     # please note that np.mean(np.vstack(participants_mlk[roi]),0) 
     # is equal to np.mean(participants_mlk[roi],0)
     plt.fill_between(x=np.arange(-300,900,4), \
-                 y1=(np.mean(np.array(participants_mlk[roi]),0)-np.std(np.array(participants_mlk[roi]),0)), \
-                 y2=(np.mean(np.array(participants_mlk[roi]),0)+np.std(np.array(participants_mlk[roi]),0)), \
+                 y1=(np.mean(np.array(participants_mlkfrt[roi]),0)
+                     - np.std(np.array(participants_mlkfrt[roi]),0)), \
+                 y2=(np.mean(np.array(participants_mlkfrt[roi]),0)
+                     + np.std(np.array(participants_mlkfrt[roi]),0)), \
                  color='b', alpha=.1)
-    avg_all[roi] = np.mean(participants_mlk[roi],0)
+    avg_all[roi] = np.mean(participants_mlkfrt[roi],0)
     plt.axvline(0, color='k');
     plt.axhline(.5, color='k', linestyle='--', label='chance');
     plt.title(roi)
@@ -70,21 +84,24 @@ plt.axvline(100, color='k',linewidth=1, alpha=0.3);
 plt.axvline(150, color='k', linewidth=1, alpha=0.3);
 plt.axvline(200, color='k', linewidth=1, alpha=0.3);
 plt.axhline(.5, color='k', linestyle='--', label='chance');
-plt.title('Decoding MILKvsLD accuracy of each ROI separately')
+plt.title('Decoding MILKvsFRUIT accuracy of each ROI separately')
 plt.legend(kkROI);
 plt.show();
 
 avg_all = pd.DataFrame(index=range(300),columns=kkROI)
 
 for roi in kkROI:  
-    sns.lineplot(x=np.arange(-300,900,4), y=np.mean(participants_frt[roi],0))
+    sns.lineplot(x = np.arange(-300,900,4), 
+                 y = np.mean(participants_frtodr[roi],0))
     # please note that np.mean(np.vstack(participants_frt[roi]),0) 
     # is equal to np.mean(participants_frt[roi],0)
     plt.fill_between(x=np.arange(-300,900,4), \
-                 y1=(np.mean(np.array(participants_frt[roi]),0)-np.std(np.array(participants_frt[roi]),0)), \
-                 y2=(np.mean(np.array(participants_frt[roi]),0)+np.std(np.array(participants_frt[roi]),0)), \
+                 y1=(np.mean(np.array(participants_frtodr[roi]),0)
+                     - np.std(np.array(participants_frtodr[roi]),0)), \
+                 y2=(np.mean(np.array(participants_frtodr[roi]),0)
+                     + np.std(np.array(participants_frtodr[roi]),0)), \
                  color='b', alpha=.1)
-    avg_all[roi] = np.mean(participants_frt[roi],0)
+    avg_all[roi] = np.mean(participants_frtodr[roi],0)
     plt.axvline(0, color='k');
     plt.axhline(.5, color='k', linestyle='--', label='chance');
     plt.title(roi)
@@ -97,21 +114,24 @@ plt.axvline(100, color='k',linewidth=1, alpha=0.3);
 plt.axvline(150, color='k', linewidth=1, alpha=0.3);
 plt.axvline(200, color='k', linewidth=1, alpha=0.3);
 plt.axhline(.5, color='k', linestyle='--', label='chance');
-plt.title('Decoding FRUITvsLD accuracy of each ROI separately')
+plt.title('Decoding FRUITvsODOUR accuracy of each ROI separately')
 plt.legend(kkROI);
 plt.show();
 
 avg_all = pd.DataFrame(index=range(300),columns=kkROI)
 
 for roi in kkROI:  
-    sns.lineplot(x=np.arange(-300,900,4), y=np.mean(participants_odr[roi],0))
+    sns.lineplot(x = np.arange(-300,900,4),
+                 y = np.mean(participants_odrmlk[roi],0))
     # please note that np.mean(np.vstack(participants_odr[roi]),0) 
     # is equal to np.mean(participants_odr[roi],0)
     plt.fill_between(x=np.arange(-300,900,4), \
-                 y1=(np.mean(np.array(participants_odr[roi]),0)-np.std(np.array(participants_odr[roi]),0)), \
-                 y2=(np.mean(np.array(participants_odr[roi]),0)+np.std(np.array(participants_odr[roi]),0)), \
+                 y1=(np.mean(np.array(participants_odrmlk[roi]),0)
+                     - np.std(np.array(participants_odrmlk[roi]),0)), \
+                 y2=(np.mean(np.array(participants_odrmlk[roi]),0)
+                     + np.std(np.array(participants_odrmlk[roi]),0)), \
                  color='b', alpha=.1)
-    avg_all[roi] = np.mean(participants_odr[roi],0)
+    avg_all[roi] = np.mean(participants_odrmlk[roi],0)
     plt.axvline(0, color='k');
     plt.axhline(.5, color='k', linestyle='--', label='chance');
     plt.title(roi)
@@ -124,7 +144,7 @@ plt.axvline(100, color='k',linewidth=1, alpha=0.3);
 plt.axvline(150, color='k', linewidth=1, alpha=0.3);
 plt.axvline(200, color='k', linewidth=1, alpha=0.3);
 plt.axhline(.5, color='k', linestyle='--', label='chance');
-plt.title('Decoding ODOURvsLD accuracy of each ROI separately')
+plt.title('Decoding ODOURvsMILK accuracy of each ROI separately')
 plt.legend(kkROI);
 plt.show();
 
