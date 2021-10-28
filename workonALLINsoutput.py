@@ -109,12 +109,17 @@ plt.legend();
 ######################################################################
 avg_all = pd.DataFrame(index=range(300),columns=kkROI)
 
+
+# # if just one participant, then use
+# participants = pd.DataFrame(index=np.arange(0,1),columns=kkROI)
+
 participants = pd.DataFrame(index=np.arange(0,18),columns=kkROI)
 # calculate root-mean-squared(coefficients) for each ROI for each participant
 for roi in kkROI:
    for i,df in enumerate(SDLD_coefficients):
        participants[roi].iloc[i] = rms(df['avg'][df['ROI']==roi])
 
+# avg_rolling = pd.DataFrame(index=range(300),columns=kkROI)
 
 # and plot the average of rms(coefficients) with sd
 for roi in kkROI:
@@ -126,6 +131,7 @@ for roi in kkROI:
                  color='b', alpha=.1)
     plt.title(roi);
     avg_all[roi] = np.mean(np.array(participants[roi]),0)
+    # avg_rolling[roi] = np.mean(np.array(pd.DataFrame(participants[roi][0]).rolling(2, win_type='gaussian').sum(std=3)),0)
 fig, ax = plt.subplots(1);
 ax.plot(np.arange(-300,900,4),avg_all)
 plt.axvline(0, color='k');
@@ -135,7 +141,14 @@ plt.axvline(150, color='k', linewidth=1, alpha=0.3);
 plt.axvline(200, color='k', linewidth=1, alpha=0.3);
 plt.legend(kkROI);
 
-
+# fig, ax = plt.subplots(1);
+# ax.plot(np.arange(-300,900,4),avg_rolling)
+# plt.axvline(0, color='k');
+# plt.axvline(50, color='k', linewidth=1, alpha=0.3);
+# plt.axvline(100, color='k',linewidth=1, alpha=0.3);
+# plt.axvline(150, color='k', linewidth=1, alpha=0.3);
+# plt.axvline(200, color='k', linewidth=1, alpha=0.3);
+# plt.legend(kkROI);
 # ######################################################################
 # ######################################################################
 # ######################################################################

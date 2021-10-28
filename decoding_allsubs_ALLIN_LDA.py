@@ -15,7 +15,6 @@ import pandas as pd
 import pickle
 import random
 
-
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.feature_selection import SelectKBest, f_classif
@@ -61,22 +60,22 @@ def trials_no_category(row):
     
     return row
 
-# def get_patterns(model,X,y,filters_):
-#     """Copied from mne patterns calculation from filters (aka coefficients)"""
-#     inv_Y = 1.
-#     X = X - X.mean(0, keepdims=True)
-#     if y.ndim == 2 and y.shape[1] != 1:
-#         y = y - y.mean(0, keepdims=True)
-#         inv_Y = np.linalg.pinv(np.cov(y.T))
-#     patterns = np.cov(X.T).dot(model.filters_.T.dot(inv_Y)).T
-# patterns_ = np.cov(X.T).dot(self.filters_.T.dot(inv_Y)).T
-#     return patterns
+def get_patterns(X,y,filters):
+    """Copied from mne patterns calculation from filters (aka coefficients)"""
+    inv_Y = 1.
+    X = X - X.mean(0, keepdims=True)
+    if y.ndim == 2 and y.shape[1] != 1:
+        y = y - y.mean(0, keepdims=True)
+        inv_Y = np.linalg.pinv(np.cov(y.T))
+    patterns = np.cov(X.T).dot(filters.T.dot(inv_Y)).T
+    return patterns
     
 SDLD_scores = []
 SDLD_coefficients = []
 cat_scores = []
 
 for sub in np.arange(0  ,18):
+    print(f"Analysing subject {sub}")
     # import the dataset containing 120 categories (6 ROIs * 4 tasks *5 categories)
     # each key contains an array with size (number of trials * number of vertices * time points)
     # with open(f'//cbsu/data/imaging/hauk/users/fm02/dataSDLD/activities_sub_{sub}.json', 'rb') as f:
@@ -292,21 +291,38 @@ for sub in np.arange(0  ,18):
     # patterns does already apply Haufe's trick
     time_decod.fit(X_mlk, y_mlk)
     coef_mlk = get_coef(time_decod, 'coef_', inverse_transform=True)
+        
+    coef_mlk = coef_mlk.reshape(coef_mlk.shape[0],coef_mlk.shape[2])
     
-    # the covariance matrix as a parameter by LDA
-    # not 100% sure this is actually getting that parameter
-    cov_mlk = get_coef(time_decod, 'covariance_', inverse_transform=True)
     patterns_mlk = []
-    for i in range(0,300):
-        patterns.append(cov_mlk[:,:,i].dot(coef_mlk[:,i]).T)
-    patterns_mlk = np.array(patterns).reshape(583,300)
+
+    for i in range(300):
+        patterns_mlk.append(get_patterns(X_mlk[:,:,i], y_mlk,coef_mlk[:,i])) 
+
     
     time_decod.fit(X_frt, y_frt)
-    patterns_frt = get_coef(time_decod, 'patterns_', inverse_transform=True)
+    coef_frt = get_coef(time_decod, 'coef_', inverse_transform=True)
+        
+    coef_frt = coef_frt.reshape(coef_frt.shape[0],coef_frt.shape[2])
+    
+    patterns_frt = []
+
+    for i in range(300):
+        patterns_frt.append(get_patterns(X_frt[:,:,i], y_frt,coef_frt[:,i])) 
     
     time_decod.fit(X_odr, y_odr)
-    patterns_odr = get_coef(time_decod, 'patterns_', inverse_transform=True)
+    coef_odr = get_coef(time_decod, 'coef_', inverse_transform=True)
+        
+    coef_odr = coef_odr.reshape(coef_odr.shape[0],coef_odr.shape[2])
     
+    patterns_odr = []
+
+    for i in range(300):
+        patterns_odr.append(get_patterns(X_odr[:,:,i], y_odr,coef_odr[:,i])) 
+    
+    patterns_mlk = np.asarray(patterns_mlk).T
+    patterns_frt = np.asarray(patterns_frt).T
+    patterns_odr = np.asarray(patterns_odr).T
     # this df has 4 columns:
         # one codes to which ROI the vertex belongs to
         # the other three refers to each task.
@@ -483,15 +499,15 @@ for sub in np.arange(0  ,18):
 
 
 
-# df_to_export = pd.DataFrame(SDLD_scores)
-# with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/0923_SDLD_scores.P",
-#           'wb') as outfile:
-#     pickle.dump(df_to_export,outfile)
+df_to_export = pd.DataFrame(SDLD_scores)
+with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1020_LDA_SDLD_scores.P",
+          'wb') as outfile:
+    pickle.dump(df_to_export,outfile)
     
-# df_to_export = pd.DataFrame(SDLD_coefficients)
-# with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/0923_SDLD_coefficients.P",
-#           'wb') as outfile:
-#     pickle.dump(df_to_export,outfile)
+df_to_export = pd.DataFrame(SDLD_coefficients)
+with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1020_LDA_SDLD_coefficients.P",
+          'wb') as outfile:
+    pickle.dump(df_to_export,outfile)
     
     
 

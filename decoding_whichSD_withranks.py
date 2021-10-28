@@ -334,3 +334,8 @@ for i in range(300):
     coef_rank_app = pd.Series(np.arange(1,7), index=coef_rank.index.values )
     
     mlkfrt_ranks[str(-300+4*i)] = coef_rank_app
+
+import seaborn as sns
+import matplotlib.pyplot as plt    
+sns.heatmap(np.array(mlkfrt_ranks.loc['lATL']).reshape(1,300), cmap="YlGnBu")
+ax = sns.heatmap(mlkfrt_ranks, cmap="YlGnBu")
