@@ -1,17 +1,14 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Sep 30 14:37:27 2021
-
-@author: fm02
-"""
-
-
 #!/usr/bin/env python
 # coding: utf-8
 
+# # Data for science Residency Project
+# 
+# In this project I will apply some of the notions lernt during the course to try to predict which brain regions and at which time point are sensitive to the different amount of semantic resources necessary for completing two different tasks. To do this, we will look at the source estimated activity of 6 Regions of Interest (ROIs) for one participant. The two tasks (lexical decision and semantic decision) are belived to vary in the amount of semantic resources necessary for completing the task. The activity is related to -300 ms to 900 ms post stimulus presentation.
+# We will try to predict to which task each trial belongs to and, after that, we will try to understand which ROI carries is sensitive to different semantics demands, by looking at the average and the maximum coefficient in each ROI at each time point.
 
 # Import some relevant packages.
-
+# mne is a package used in the analysis of MEG and EEG brain data. We are importing some functions useful for decoding brain signal.
+# 
 
 import numpy as np
 import pandas as pd
@@ -21,10 +18,11 @@ import random
 
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
-from sklearn.feature_selection import SelectKBest, f_classif, SelectPercentile
+from sklearn.feature_selection import SelectKBest, f_classif
 from sklearn.linear_model import LogisticRegression
 from sklearn.utils import shuffle
 
+# mne is a library for analysis of MEG/EEG brain data
 
 from mne.decoding import (cross_val_multiscore, LinearModel, SlidingEstimator,
                           get_coef)
@@ -63,16 +61,19 @@ def trials_no_category(row):
     
     return row
         
-SDvsSD_scores = []
-SDvsSD_coefficients = []
-SDvsSD_ranks = []
+SDLD_scores = []
+SDLD_coefficients = []
+LDvsSD_ranks = []
 
 for sub in np.arange(0  ,18):
-    print(f'Analysing participant number: {sub}')
+    print(f"Analysing participant: {sub}")
     # import the dataset containing 120 categories (6 ROIs * 4 tasks *5 categories)
     # each key contains an array with size (number of trials * number of vertices * time points)
+    # with open(f'//imaging/hauk/users/fm02/dataSDLD/activities_sub_{sub}.json', 'rb') as f:
+    #     output = pickle.load(f)
+    
     with open(f'//cbsu/data/Imaging/hauk/users/fm02/dataSDLD/activities_sub_{sub}.json', 'rb') as f:
-        output = pickle.load(f)
+      output = pickle.load(f)
     
     kk = list(output.keys())
     
@@ -213,6 +214,9 @@ for sub in np.arange(0  ,18):
     print(lds.shape) 
     print(frts.shape)
     print(odrs.shape)
+    # The above shapes refletc (n_trials * n_vertices * timpoints), as we can see the number of trials is similar, and we have the same number of vertices and timepoints (aka our brain signal) for each trial.
+    
+    # We now want to group each vertex with the ROI they belong to (as we lost this information during the manipulation of the data).
     
     vertices = []
     
@@ -235,91 +239,80 @@ for sub in np.arange(0  ,18):
     # contrasting each semantic decision task vs lexical decision task
     # check when and where areas are sensitive to task difference on average
     
-    X_mlkfrt = np.concatenate([mlks , frts])
-    y_mlkfrt = np.array(['milk']*len(mlks) + ['fruit']*len(frts))
+    X_mlk = np.concatenate([mlks , lds])
+    y_mlk = np.array(['milk']*len(mlks) + ['LD']*len(lds))
     
-    X_frtodr = np.concatenate([frts , odrs])
-    y_frtodr = np.array(['fruit']*len(frts) + ['odour']*len(odrs))
+    X_frt = np.concatenate([frts , lds])
+    y_frt = np.array(['fruit']*len(frts) + ['LD']*len(lds))
     
-    X_odrmlk = np.concatenate([odrs , mlks])
-    y_odrmlk = np.array(['odour']*len(odrs) + ['milk']*len(mlks))
+    X_odr = np.concatenate([odrs , lds])
+    y_odr = np.array(['odour']*len(odrs) + ['LD']*len(lds))
     
     
-    X_mlkfrt, y_mlkfrt = shuffle(X_mlkfrt, y_mlkfrt, random_state=0)
-    X_frtodr, y_frtodr = shuffle(X_frtodr, y_frtodr, random_state=0)
-    X_odrmlk, y_odrmlk = shuffle(X_odrmlk, y_odrmlk, random_state=0)
+    X_mlk, y_mlk = shuffle(X_mlk, y_mlk, random_state=0)
+    X_frt, y_frt = shuffle(X_frt, y_frt, random_state=0)
+    X_odr, y_odr = shuffle(X_odr, y_odr, random_state=0)
     
     # We create and run the model. We expect the model to perform at chance before the presentation of the stimuli (no ROI should be sensitive to task/semantics demands before the presentation of a word).
     
     # prepare a series of classifier applied at each time sample
-    clf = make_pipeline(StandardScaler(),  # z-score normalization
-                        SelectKBest(f_classif, k='all'),  # select features for speed
-                        LinearModel(LogisticRegression(C=1, solver='liblinear')))
-    time_decod = SlidingEstimator(clf, scoring='roc_auc')
+    # clf = make_pipeline(StandardScaler(),  # z-score normalization
+    #                     SelectKBest(f_classif, k='all'),  # select features for speed
+    #                     LinearModel(LogisticRegression(C=1, solver='liblinear')))
+    # time_decod = SlidingEstimator(clf, scoring='roc_auc')
     
-    # Run cross-validated decoding analyses:
-    scores_mlkfrt = cross_val_multiscore(time_decod, X_mlkfrt, y_mlkfrt, cv=5)
-    scores_frtodr = cross_val_multiscore(time_decod, X_frtodr, y_frtodr, cv=5)
-    scores_odrmlk = cross_val_multiscore(time_decod, X_odrmlk, y_odrmlk, cv=5)
+    # # Run cross-validated decoding analyses:
+    # scores_mlk = cross_val_multiscore(time_decod, X_mlk, y_mlk, cv=5)
+    # scores_frt = cross_val_multiscore(time_decod, X_frt, y_frt, cv=5)
+    # scores_odr = cross_val_multiscore(time_decod, X_odr, y_odr, cv=5)
     
-    scores = pd.DataFrame(list(zip(scores_mlkfrt, scores_frtodr, scores_odrmlk)),
-                          columns=['milkVSfruit',
-                                   'fruitVSodour', 
-                                   'odourVSmilk'])
-    SDvsSD_scores.append(scores)
+    # scores = pd.DataFrame(list(zip(scores_mlk, scores_frt, scores_odr)),
+    #                       columns=['milk','fruit','odour'])
+    # SDLD_scores.append(scores)
     
-    # HEY!
-    # thanks mne.
-    # https://github.com/mne-tools/mne-python/blob/maint/0.23/mne/decoding/base.py#L291-L355
-    # line 93
-    # patterns does already apply Haufe's trick
+    # # HEY!
+    # # thanks mne.
+    # # https://github.com/mne-tools/mne-python/blob/maint/0.23/mne/decoding/base.py#L291-L355
+    # # line 93
+    # # patterns does already apply Haufe's trick
+    # time_decod.fit(X_mlk, y_mlk)
+    # patterns_mlk = get_coef(time_decod, 'patterns_', inverse_transform=True)
     
-    time_decod.fit(X_mlkfrt, y_mlkfrt)
-    patterns_mlkfrt = get_coef(time_decod, 'patterns_', inverse_transform=True)
+    # time_decod.fit(X_frt, y_frt)
+    # patterns_frt = get_coef(time_decod, 'patterns_', inverse_transform=True)
     
-    time_decod.fit(X_frtodr, y_frtodr)
-    patterns_frtodr = get_coef(time_decod, 'patterns_', inverse_transform=True)
+    # time_decod.fit(X_odr, y_odr)
+    # patterns_odr = get_coef(time_decod, 'patterns_', inverse_transform=True)
     
-    time_decod.fit(X_odrmlk, y_odrmlk)
-    patterns_odrmlk = get_coef(time_decod, 'patterns_', inverse_transform=True)
-    
-    # this df has 4 columns:
-        # one codes to which ROI the vertex belongs to
-        # the other three refers to each task.
+    # # this df has 4 columns:
+    #     # one codes to which ROI the vertex belongs to
+    #     # the other three refers to each task.
 
-    df = pd.DataFrame(zip(ROI_vertices, 
-                          patterns_mlkfrt, 
-                          patterns_frtodr, 
-                          patterns_odrmlk),
-                      columns=['ROI',
-                               'milkVSfruit',
-                               'fruitVSodour', 
-                               'odourVSmilk'])
+    # df = pd.DataFrame(zip(ROI_vertices, patterns_mlk, patterns_frt, patterns_odr),columns=['ROI','milk', 'fruit', 'odour'])
 
     
-    avg = []
-    for i in range(len(df)):
-        avg.append(np.mean([df['milkVSfruit'][i],
-                            df['fruitVSodour'][i],
-                            df['odourVSmilk'][i]],0))
-    df['avg'] = avg
+    # avg = []
+    # for i in range(len(df)):
+    #     avg.append(np.mean([df['milk'][i],df['fruit'][i],df['odour'][i]],0))
+    # df['avg'] = avg
 
     
-    SDvsSD_coefficients.append(df)
-
-    mlkfrt_ranks = pd.DataFrame(index=kkROI,
+    # SDLD_coefficients.append(df)
+    
+    
+    mlk_ranks = pd.DataFrame(index=kkROI,
                                 columns=range(300))
-    frtodr_ranks = pd.DataFrame(index=kkROI,
+    frt_ranks = pd.DataFrame(index=kkROI,
                                 columns=range(300))
-    odrmlk_ranks = pd.DataFrame(index=kkROI,
+    odr_ranks = pd.DataFrame(index=kkROI,
                                 columns=range(300))
     
     for i in range(300):
         coefscores_mf = pd.DataFrame(zip(ROI_vertices,
-                                  SelectKBest(k='all').fit(X_mlkfrt[:,:,i],
-                                                           y_mlkfrt).scores_))
+                                  SelectKBest(k='all').fit(X_mlk[:,:,i],
+                                                           y_mlk).scores_))
         coefscores_mf = coefscores_mf.sort_values(by=1, ascending=True).reset_index()
-        coefscores_mf = coefscores_mf.tail(58)
+        coefscores_mf = coefscores_mf.tail(len(coefscores_mf)//10)
     
         coef_rank = pd.Series(index=kkROI)
     
@@ -328,12 +321,12 @@ for sub in np.arange(0  ,18):
         coef_rank = coef_rank.sort_values(ascending=False)
         coef_rank_app = pd.Series(np.arange(1,7), index=coef_rank.index.values )
         
-        mlkfrt_ranks[i] = coef_rank_app
+        mlk_ranks[i] = coef_rank_app
     
     
         coefscores_fo = pd.DataFrame(zip(ROI_vertices,
-                                  SelectKBest(k='all').fit(X_frtodr[:,:,i],
-                                                           y_frtodr).scores_))
+                                  SelectKBest(k='all').fit(X_frt[:,:,i],
+                                                           y_frt).scores_))
         coefscores_fo = coefscores_fo.sort_values(by=1, ascending=True).reset_index()
         # get the best 10%
         # note, this is different from selectPercentile, because we are fitting
@@ -347,11 +340,11 @@ for sub in np.arange(0  ,18):
         coef_rank = coef_rank.sort_values(ascending=False)
         coef_rank_app = pd.Series(np.arange(1,7), index=coef_rank.index.values )
         
-        frtodr_ranks[i] = coef_rank_app
+        frt_ranks[i] = coef_rank_app
     
         coefscores_om = pd.DataFrame(zip(ROI_vertices,
-                                  SelectKBest(k='all').fit(X_odrmlk[:,:,i],
-                                                           y_odrmlk).scores_))
+                                  SelectKBest(k='all').fit(X_odr[:,:,i],
+                                                           y_odr).scores_))
         coefscores_om = coefscores_om.sort_values(by=1, ascending=True).reset_index()
         # get the best 10%
         # note, this is different from selectPercentile, because we are fitting
@@ -365,61 +358,26 @@ for sub in np.arange(0  ,18):
         coef_rank = coef_rank.sort_values(ascending=False)
         coef_rank_app = pd.Series(np.arange(1,7), index=coef_rank.index.values )
         
-        odrmlk_ranks[i] = coef_rank_app
+        odr_ranks[i] = coef_rank_app
     
-    all_ranks = pd.concat([mlkfrt_ranks,frtodr_ranks,odrmlk_ranks])
+    all_ranks = pd.concat([mlk_ranks,frt_ranks,odr_ranks])
     avg_ranks = all_ranks.groupby(by=all_ranks.index).mean()  
     
-    SDvsSD_ranks.append(avg_ranks)
-    
-# df_to_export = pd.DataFrame(SDvsSD_scores)
-# with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1005_SDvsSD_avg_scores.P", 'wb') as outfile:
+    LDvsSD_ranks.append(avg_ranks)
+
+
+
+
+# df_to_export = pd.DataFrame(SDLD_scores)
+# with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/0923_SDLD_scores.P",
+#           'wb') as outfile:
 #     pickle.dump(df_to_export,outfile)
-# df_to_export = pd.DataFrame(SDvsSD_coefficients)
-# with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1005_SDvsSD_coefficients.P", 'wb') as outfile:
-#     pickle.dump(df_to_export,outfile)
-
-# create ranks object
-
-  
     
-# import seaborn as sns
-# import matplotlib.pyplot as plt    
+# df_to_export = pd.DataFrame(SDLD_coefficients)
+# with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/0923_SDLD_coefficients.P",
+#           'wb') as outfile:
+#     pickle.dump(df_to_export,outfile)
+    
+    
 
-# ax = sns.heatmap(odrmlk_ranks, cmap="YlGnBu")
-
-# avg_rank =  pd.DataFrame(index=kkROI,
-#                             columns=range(300))
-
-# np.mean(mlkfrt_ranks,frtodr_ranks,odrmlk_ranks)
-
-import seaborn as sns
-
-import matplotlib.pyplot as plt
-
-big_ranks = pd.concat(SDvsSD_ranks)
-avg_big_ranks = big_ranks.groupby(by=big_ranks.index).mean()
-
-ax = sns.heatmap(avg_big_ranks, cmap="YlGnBu", xticklabels=False)
-plt.axvline(75, color='k');
-plt.axvline(112.5, color='k', linewidth=1, alpha=0.3);
-plt.axvline(150, color='k',linewidth=1, alpha=0.3);
-plt.axvline(187.5, color='k', linewidth=1, alpha=0.3);
-plt.axvline(225, color='k', linewidth=1, alpha=0.3);
-plt.xticks([0, 75, 112.5, 150, 187.5, 225, 275], ['-300','0', '150', '300', '450', '600', '800'])
-
-plt.title("average rank (low is better)");
-
-plt.show()
-
-for i,df in enumerate(SDvsSD_ranks):
-    ax = sns.heatmap(df, cmap="YlGnBu")
-    plt.axvline(75, color='k');
-    plt.axvline(112.5, color='k', linewidth=1, alpha=0.3);
-    plt.axvline(150, color='k',linewidth=1, alpha=0.3);
-    plt.axvline(187.5, color='k', linewidth=1, alpha=0.3);
-    plt.axvline(225, color='k', linewidth=1, alpha=0.3);
-    plt.xticks([0, 75, 112.5, 150, 187.5, 225, 275], ['-300','0', '150', '300', '450', '600', '800'])
-
-    plt.title(f"ranks participant {i}")
-    plt.show()
+ 
