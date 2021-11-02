@@ -307,11 +307,80 @@ for sub in np.arange(0  ,18):
     odr_ranks = pd.DataFrame(index=kkROI,
                                 columns=range(300))
     
+
+    # in this loop the rank is calculated based on number of coefficient for each ROI 
+    # (e.g., sum of coefs positions)
+    
+    # for i in range(300):
+    #     coefscores_milk = pd.DataFrame(zip(ROI_vertices,
+    #                       SelectKBest(k='all').fit(X_mlk[:,:,i],
+    #                                                y_mlk).pvalues_))
+        
+    #     coefscores_milk = coefscores_milk[coefscores_milk[1]<.05]
+        
+    #     coef_rank = coefscores_milk[0].value_counts()
+        
+    #     for roi in kkROI:
+    #         if roi not in coef_rank.index:
+    #             coef_rank[roi]=0
+        
+    #     coef_rank = coef_rank.sort_values(ascending=False)
+        
+    #     coef_rank_app = pd.Series(np.arange(1,7), index=coef_rank.index.values )
+        
+    #     mlk_ranks[i] = coef_rank_app
+    
+    
+    #     coefscores_fruit = pd.DataFrame(zip(ROI_vertices,
+    #                       SelectKBest(k='all').fit(X_frt[:,:,i],
+    #                                                y_frt).pvalues_))
+        
+    #     coefscores_fruit = coefscores_fruit[coefscores_fruit[1]<.05]
+        
+    #     coef_rank = coefscores_fruit[0].value_counts()
+
+    #     for roi in kkROI:
+    #         if roi not in coef_rank.index:
+    #             coef_rank[roi]=0
+        
+    #     coef_rank = coef_rank.sort_values(ascending=False)
+        
+    #     coef_rank_app = pd.Series(np.arange(1,7), index=coef_rank.index.values )
+        
+    #     frt_ranks[i] = coef_rank_app
+        
+        
+    #     coefscores_odour = pd.DataFrame(zip(ROI_vertices,
+    #                       SelectKBest(k='all').fit(X_odr[:,:,i],
+    #                                                y_odr).pvalues_))
+        
+    #     coefscores_odour = coefscores_odour[coefscores_odour[1]<.05]
+        
+    #     coef_rank = coefscores_odour[0].value_counts()
+        
+    #     for roi in kkROI:
+    #         if roi not in coef_rank.index:
+    #             coef_rank[roi]=0
+                
+    #     coef_rank = coef_rank.sort_values(ascending=False)
+        
+    #     coef_rank_app = pd.Series(np.arange(1,7), index=coef_rank.index.values )
+        
+    #     odr_ranks[i] = coef_rank_app
+        
+    # all_ranks = pd.concat([mlk_ranks,frt_ranks,odr_ranks])
+    # avg_ranks = all_ranks.groupby(by=all_ranks.index).mean()  
+    
+    # LDvsSD_ranks.append(avg_ranks)
+
+    # in this loop the rank is calculated based on position 
+    # (e.g., sum of coefs positions)
     for i in range(300):
         coefscores_mf = pd.DataFrame(zip(ROI_vertices,
                                   SelectKBest(k='all').fit(X_mlk[:,:,i],
-                                                           y_mlk).scores_))
-        coefscores_mf = coefscores_mf.sort_values(by=1, ascending=True).reset_index()
+                                                            y_mlk).scores_))
+
+        coefscores_mf = coefscores_mf.sort_values(by=1, ascending=False).reset_index()
         coefscores_mf = coefscores_mf.tail(len(coefscores_mf)//10)
     
         coef_rank = pd.Series(index=kkROI)
@@ -326,7 +395,7 @@ for sub in np.arange(0  ,18):
     
         coefscores_fo = pd.DataFrame(zip(ROI_vertices,
                                   SelectKBest(k='all').fit(X_frt[:,:,i],
-                                                           y_frt).scores_))
+                                                            y_frt).scores_))
         coefscores_fo = coefscores_fo.sort_values(by=1, ascending=True).reset_index()
         # get the best 10%
         # note, this is different from selectPercentile, because we are fitting
@@ -344,7 +413,7 @@ for sub in np.arange(0  ,18):
     
         coefscores_om = pd.DataFrame(zip(ROI_vertices,
                                   SelectKBest(k='all').fit(X_odr[:,:,i],
-                                                           y_odr).scores_))
+                                                            y_odr).scores_))
         coefscores_om = coefscores_om.sort_values(by=1, ascending=True).reset_index()
         # get the best 10%
         # note, this is different from selectPercentile, because we are fitting
@@ -366,7 +435,36 @@ for sub in np.arange(0  ,18):
     LDvsSD_ranks.append(avg_ranks)
 
 
+import seaborn as sns
 
+import matplotlib.pyplot as plt
+
+big_ranks = pd.concat(LDvsSD_ranks)
+avg_big_ranks = big_ranks.groupby(by=big_ranks.index).mean()
+
+ax = sns.heatmap(avg_big_ranks, cmap="YlGnBu", xticklabels=False)
+plt.axvline(75, color='k');
+plt.axvline(112.5, color='k', linewidth=1, alpha=0.3);
+plt.axvline(150, color='k',linewidth=1, alpha=0.3);
+plt.axvline(187.5, color='k', linewidth=1, alpha=0.3);
+plt.axvline(225, color='k', linewidth=1, alpha=0.3);
+plt.xticks([0, 75, 112.5, 150, 187.5, 225, 275], ['-300','0', '150', '300', '450', '600', '800'])
+
+plt.title("LDvsaverage rank (low is better)");
+
+plt.show()
+
+for i,df in enumerate(LDvsSD_ranks):
+    ax = sns.heatmap(df, cmap="YlGnBu")
+    plt.axvline(75, color='k');
+    plt.axvline(112.5, color='k', linewidth=1, alpha=0.3);
+    plt.axvline(150, color='k',linewidth=1, alpha=0.3);
+    plt.axvline(187.5, color='k', linewidth=1, alpha=0.3);
+    plt.axvline(225, color='k', linewidth=1, alpha=0.3);
+    plt.xticks([0, 75, 112.5, 150, 187.5, 225, 275], ['-300','0', '150', '300', '450', '600', '800'])
+
+    plt.title(f"ranks participant {i}")
+    plt.show()
 
 # df_to_export = pd.DataFrame(SDLD_scores)
 # with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/0923_SDLD_scores.P",
@@ -378,6 +476,11 @@ for sub in np.arange(0  ,18):
 #           'wb') as outfile:
 #     pickle.dump(df_to_export,outfile)
     
-    
+participants = {}
+for i,df in enumerate(LDvsSD_ranks):
+    participants[i] = df
+
+with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1101_LDvsSD_ranks.P", 'wb') as outfile:
+    pickle.dump(participants,outfile)   
 
  

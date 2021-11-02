@@ -252,60 +252,60 @@ for sub in np.arange(0  ,18):
     # We create and run the model. We expect the model to perform at chance before the presentation of the stimuli (no ROI should be sensitive to task/semantics demands before the presentation of a word).
     
     # prepare a series of classifier applied at each time sample
-    clf = make_pipeline(StandardScaler(),  # z-score normalization
-                        SelectKBest(f_classif, k='all'),  # select features for speed
-                        LinearModel(LogisticRegression(C=1, solver='liblinear')))
-    time_decod = SlidingEstimator(clf, scoring='roc_auc')
+    # clf = make_pipeline(StandardScaler(),  # z-score normalization
+    #                     SelectKBest(f_classif, k='all'),  # select features for speed
+    #                     LinearModel(LogisticRegression(C=1, solver='liblinear')))
+    # time_decod = SlidingEstimator(clf, scoring='roc_auc')
     
-    # Run cross-validated decoding analyses:
-    scores_mlkfrt = cross_val_multiscore(time_decod, X_mlkfrt, y_mlkfrt, cv=5)
-    scores_frtodr = cross_val_multiscore(time_decod, X_frtodr, y_frtodr, cv=5)
-    scores_odrmlk = cross_val_multiscore(time_decod, X_odrmlk, y_odrmlk, cv=5)
+    # # Run cross-validated decoding analyses:
+    # scores_mlkfrt = cross_val_multiscore(time_decod, X_mlkfrt, y_mlkfrt, cv=5)
+    # scores_frtodr = cross_val_multiscore(time_decod, X_frtodr, y_frtodr, cv=5)
+    # scores_odrmlk = cross_val_multiscore(time_decod, X_odrmlk, y_odrmlk, cv=5)
     
-    scores = pd.DataFrame(list(zip(scores_mlkfrt, scores_frtodr, scores_odrmlk)),
-                          columns=['milkVSfruit',
-                                   'fruitVSodour', 
-                                   'odourVSmilk'])
-    SDvsSD_scores.append(scores)
+    # scores = pd.DataFrame(list(zip(scores_mlkfrt, scores_frtodr, scores_odrmlk)),
+    #                       columns=['milkVSfruit',
+    #                                'fruitVSodour', 
+    #                                'odourVSmilk'])
+    # SDvsSD_scores.append(scores)
     
-    # HEY!
-    # thanks mne.
-    # https://github.com/mne-tools/mne-python/blob/maint/0.23/mne/decoding/base.py#L291-L355
-    # line 93
-    # patterns does already apply Haufe's trick
+    # # HEY!
+    # # thanks mne.
+    # # https://github.com/mne-tools/mne-python/blob/maint/0.23/mne/decoding/base.py#L291-L355
+    # # line 93
+    # # patterns does already apply Haufe's trick
     
-    time_decod.fit(X_mlkfrt, y_mlkfrt)
-    patterns_mlkfrt = get_coef(time_decod, 'patterns_', inverse_transform=True)
+    # time_decod.fit(X_mlkfrt, y_mlkfrt)
+    # patterns_mlkfrt = get_coef(time_decod, 'patterns_', inverse_transform=True)
     
-    time_decod.fit(X_frtodr, y_frtodr)
-    patterns_frtodr = get_coef(time_decod, 'patterns_', inverse_transform=True)
+    # time_decod.fit(X_frtodr, y_frtodr)
+    # patterns_frtodr = get_coef(time_decod, 'patterns_', inverse_transform=True)
     
-    time_decod.fit(X_odrmlk, y_odrmlk)
-    patterns_odrmlk = get_coef(time_decod, 'patterns_', inverse_transform=True)
+    # time_decod.fit(X_odrmlk, y_odrmlk)
+    # patterns_odrmlk = get_coef(time_decod, 'patterns_', inverse_transform=True)
     
-    # this df has 4 columns:
-        # one codes to which ROI the vertex belongs to
-        # the other three refers to each task.
+    # # this df has 4 columns:
+    #     # one codes to which ROI the vertex belongs to
+    #     # the other three refers to each task.
 
-    df = pd.DataFrame(zip(ROI_vertices, 
-                          patterns_mlkfrt, 
-                          patterns_frtodr, 
-                          patterns_odrmlk),
-                      columns=['ROI',
-                               'milkVSfruit',
-                               'fruitVSodour', 
-                               'odourVSmilk'])
-
-    
-    avg = []
-    for i in range(len(df)):
-        avg.append(np.mean([df['milkVSfruit'][i],
-                            df['fruitVSodour'][i],
-                            df['odourVSmilk'][i]],0))
-    df['avg'] = avg
+    # df = pd.DataFrame(zip(ROI_vertices, 
+    #                       patterns_mlkfrt, 
+    #                       patterns_frtodr, 
+    #                       patterns_odrmlk),
+    #                   columns=['ROI',
+    #                            'milkVSfruit',
+    #                            'fruitVSodour', 
+    #                            'odourVSmilk'])
 
     
-    SDvsSD_coefficients.append(df)
+    # avg = []
+    # for i in range(len(df)):
+    #     avg.append(np.mean([df['milkVSfruit'][i],
+    #                         df['fruitVSodour'][i],
+    #                         df['odourVSmilk'][i]],0))
+    # df['avg'] = avg
+
+    
+    # SDvsSD_coefficients.append(df)
 
     mlkfrt_ranks = pd.DataFrame(index=kkROI,
                                 columns=range(300))
@@ -314,63 +314,130 @@ for sub in np.arange(0  ,18):
     odrmlk_ranks = pd.DataFrame(index=kkROI,
                                 columns=range(300))
     
+    # in this loop the rank is calculated based on number of coefficient for each ROI 
+    # (e.g., sum of coefs positions)
+    
     for i in range(300):
         coefscores_mf = pd.DataFrame(zip(ROI_vertices,
-                                  SelectKBest(k='all').fit(X_mlkfrt[:,:,i],
-                                                           y_mlkfrt).scores_))
-        coefscores_mf = coefscores_mf.sort_values(by=1, ascending=True).reset_index()
-        coefscores_mf = coefscores_mf.tail(58)
-    
-        coef_rank = pd.Series(index=kkROI)
-    
+                          SelectKBest(k='all').fit(X_mlkfrt[:,:,i],
+                                                   y_mlkfrt).pvalues_))
+        
+        coefscores_mf = coefscores_mf[coefscores_mf[1]<.05]
+        
+        coef_rank = coefscores_mf[0].value_counts()
+        
         for roi in kkROI:
-            coef_rank[roi] = coefscores_mf[coefscores_mf[0]==roi].index.values.sum()
+            if roi not in coef_rank.index:
+                coef_rank[roi]=0
+        
         coef_rank = coef_rank.sort_values(ascending=False)
+        
         coef_rank_app = pd.Series(np.arange(1,7), index=coef_rank.index.values )
         
         mlkfrt_ranks[i] = coef_rank_app
     
     
         coefscores_fo = pd.DataFrame(zip(ROI_vertices,
-                                  SelectKBest(k='all').fit(X_frtodr[:,:,i],
-                                                           y_frtodr).scores_))
-        coefscores_fo = coefscores_fo.sort_values(by=1, ascending=True).reset_index()
-        # get the best 10%
-        # note, this is different from selectPercentile, because we are fitting
-        # the data considering all time points, and not just the 10% best features
-        coefscores_fo = coefscores_fo.tail(len(coefscores_fo)//10)
-    
-        coef_rank = pd.Series(index=kkROI)
-    
+                          SelectKBest(k='all').fit(X_frtodr[:,:,i],
+                                                   y_frtodr).pvalues_))
+        
+        coefscores_fo = coefscores_fo[coefscores_fo[1]<.05]
+        
+        coef_rank = coefscores_fo[0].value_counts()
+
         for roi in kkROI:
-            coef_rank[roi] = coefscores_fo[coefscores_fo[0]==roi].index.values.sum()
+            if roi not in coef_rank.index:
+                coef_rank[roi]=0
+        
         coef_rank = coef_rank.sort_values(ascending=False)
+        
         coef_rank_app = pd.Series(np.arange(1,7), index=coef_rank.index.values )
         
         frtodr_ranks[i] = coef_rank_app
-    
+        
+        
         coefscores_om = pd.DataFrame(zip(ROI_vertices,
-                                  SelectKBest(k='all').fit(X_odrmlk[:,:,i],
-                                                           y_odrmlk).scores_))
-        coefscores_om = coefscores_om.sort_values(by=1, ascending=True).reset_index()
-        # get the best 10%
-        # note, this is different from selectPercentile, because we are fitting
-        # the data considering all time points, and not just the 10% best features
-        coefscores_om = coefscores_om.tail(len(coefscores_om)//10)
-    
-        coef_rank = pd.Series(index=kkROI)
-    
+                          SelectKBest(k='all').fit(X_odrmlk[:,:,i],
+                                                   y_odrmlk).pvalues_))
+        
+        coefscores_om = coefscores_om[coefscores_om[1]<.05]
+        
+        coef_rank = coefscores_om[0].value_counts()
+        
         for roi in kkROI:
-            coef_rank[roi] = coefscores_om[coefscores_om[0]==roi].index.values.sum()
+            if roi not in coef_rank.index:
+                coef_rank[roi]=0
+                
         coef_rank = coef_rank.sort_values(ascending=False)
+        
         coef_rank_app = pd.Series(np.arange(1,7), index=coef_rank.index.values )
         
         odrmlk_ranks[i] = coef_rank_app
-    
+        
     all_ranks = pd.concat([mlkfrt_ranks,frtodr_ranks,odrmlk_ranks])
     avg_ranks = all_ranks.groupby(by=all_ranks.index).mean()  
     
     SDvsSD_ranks.append(avg_ranks)
+    
+    # in this loop the rank is calculated based on position 
+    # (e.g., sum of coefs positions)
+    # for i in range(300):
+    #     coefscores_mf = pd.DataFrame(zip(ROI_vertices,
+    #                               SelectKBest(k='all').fit(X_mlkfrt[:,:,i],
+    #                                                        y_mlkfrt).scores_))
+    #     coefscores_mf = coefscores_mf.sort_values(by=1, ascending=True).reset_index()
+    #     coefscores_mf = coefscores_mf.tail(len(coefscores_mf)//10)
+    
+    #     coef_rank = pd.Series(index=kkROI)
+    
+    #     for roi in kkROI:
+    #         coef_rank[roi] = coefscores_mf[coefscores_mf[0]==roi].index.values.sum()
+    #     coef_rank = coef_rank.sort_values(ascending=False)
+    #     coef_rank_app = pd.Series(np.arange(1,7), index=coef_rank.index.values )
+        
+    #     mlkfrt_ranks[i] = coef_rank_app
+    
+    
+    #     coefscores_fo = pd.DataFrame(zip(ROI_vertices,
+    #                               SelectKBest(k='all').fit(X_frtodr[:,:,i],
+    #                                                        y_frtodr).scores_))
+    #     coefscores_fo = coefscores_fo.sort_values(by=1, ascending=True).reset_index()
+    #     # get the best 10%
+    #     # note, this is different from selectPercentile, because we are fitting
+    #     # the data considering all time points, and not just the 10% best features
+    #     coefscores_fo = coefscores_fo.tail(len(coefscores_fo)//10)
+    
+    #     coef_rank = pd.Series(index=kkROI)
+    
+    #     for roi in kkROI:
+    #         coef_rank[roi] = coefscores_fo[coefscores_fo[0]==roi].index.values.sum()
+    #     coef_rank = coef_rank.sort_values(ascending=False)
+    #     coef_rank_app = pd.Series(np.arange(1,7), index=coef_rank.index.values )
+        
+    #     frtodr_ranks[i] = coef_rank_app
+    
+    #     coefscores_om = pd.DataFrame(zip(ROI_vertices,
+    #                               SelectKBest(k='all').fit(X_odrmlk[:,:,i],
+    #                                                        y_odrmlk).scores_))
+    #     coefscores_om = coefscores_om.sort_values(by=1, ascending=True).reset_index()
+    #     # get the best 10%
+    #     # note, this is different from selectPercentile, because we are fitting
+    #     # the data considering all time points, and not just the 10% best features
+    #     coefscores_om = coefscores_om.tail(len(coefscores_om)//10)
+    
+    #     coef_rank = pd.Series(index=kkROI)
+    
+    #     for roi in kkROI:
+    #         coef_rank[roi] = coefscores_om[coefscores_om[0]==roi].index.values.sum()
+    #     coef_rank = coef_rank.sort_values(ascending=False)
+    #     coef_rank_app = pd.Series(np.arange(1,7), index=coef_rank.index.values )
+        
+    #     odrmlk_ranks[i] = coef_rank_app
+    
+    # all_ranks = pd.concat([mlkfrt_ranks,frtodr_ranks,odrmlk_ranks])
+    # avg_ranks = all_ranks.groupby(by=all_ranks.index).mean()  
+    
+    # SDvsSD_ranks.append(avg_ranks)
     
 # df_to_export = pd.DataFrame(SDvsSD_scores)
 # with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1005_SDvsSD_avg_scores.P", 'wb') as outfile:
@@ -381,17 +448,6 @@ for sub in np.arange(0  ,18):
 
 # create ranks object
 
-  
-    
-# import seaborn as sns
-# import matplotlib.pyplot as plt    
-
-# ax = sns.heatmap(odrmlk_ranks, cmap="YlGnBu")
-
-# avg_rank =  pd.DataFrame(index=kkROI,
-#                             columns=range(300))
-
-# np.mean(mlkfrt_ranks,frtodr_ranks,odrmlk_ranks)
 
 import seaborn as sns
 
@@ -400,7 +456,7 @@ import matplotlib.pyplot as plt
 big_ranks = pd.concat(SDvsSD_ranks)
 avg_big_ranks = big_ranks.groupby(by=big_ranks.index).mean()
 
-ax = sns.heatmap(avg_big_ranks, cmap="YlGnBu", xticklabels=False)
+ax = sns.heatmap(avg_big_ranks, cmap="YlGnBu", xticklabels=False,vmin=1,vmax=6)
 plt.axvline(75, color='k');
 plt.axvline(112.5, color='k', linewidth=1, alpha=0.3);
 plt.axvline(150, color='k',linewidth=1, alpha=0.3);
@@ -423,3 +479,15 @@ for i,df in enumerate(SDvsSD_ranks):
 
     plt.title(f"ranks participant {i}")
     plt.show()
+
+for roi in kkROI:
+    avg_big_ranks.loc[roi].plot()
+plt.legend()
+plt.show()
+
+participant = {}
+for i,df in enumerate(SDvsSD_ranks):
+    participant[i] = df
+
+with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1101_SDvsSD_ranks.P", 'wb') as outfile:
+    pickle.dump(participant,outfile)    
