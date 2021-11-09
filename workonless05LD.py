@@ -14,52 +14,53 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 
-# with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1101_SDvsSD_ranks.P", 'rb') as f:
-#      SDvsSD = pickle.load(f)
+with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1101_SDvsSD_ranks.P", 'rb') as f:
+      SDvsSD = pickle.load(f)
 
-# kkROI = ['lATL', 'rATL', 'AG', 'PTC', 'IFG', 'PVA']
+kkROI = ['lATL', 'rATL', 'AG', 'PTC', 'IFG', 'PVA']
 
-# SDvsSD_ranks = list(SDvsSD.values())
+SDvsSD_ranks = list(SDvsSD.values())
      
-# big_ranks_SD = pd.concat(SDvsSD_ranks)
+big_ranks_SD = pd.concat(SDvsSD_ranks)
+lis = list(range(18))
+times = len(SDvsSD_ranks[0])
 
-# avg_big_ranks_SD = big_ranks_SD.groupby(by=big_ranks_SD.index).mean()
+big_ranks_SD['participant'] = sum(([x]*times for x in lis),[])
+big_ranks_SD = big_ranks_SD.set_index(['participant', big_ranks_SD.index])    
 
-# ax = sns.heatmap(avg_big_ranks_SD, cmap="YlGnBu", xticklabels=False)
-# plt.axvline(75, color='k');
-# plt.axvline(112.5, color='k', linewidth=1, alpha=0.3);
-# plt.axvline(150, color='k',linewidth=1, alpha=0.3);
-# plt.axvline(187.5, color='k', linewidth=1, alpha=0.3);
-# plt.axvline(225, color='k', linewidth=1, alpha=0.3);
-# plt.xticks([0, 75, 112.5, 150, 187.5, 225, 275], ['-300','0', '150', '300', '450', '600', '800'])
 
-# plt.title("SDvsSD average rank (low is better)");
+avg_big_ranks_SD = big_ranks_SD.groupby(by=big_ranks_SD.index).mean()
 
-# plt.show()
-
-# # for i,df in enumerate(SDvsSD_ranks):
-# #     ax = sns.heatmap(df, cmap="YlGnBu")
-# #     plt.axvline(75, color='k');
-# #     plt.axvline(112.5, color='k', linewidth=1, alpha=0.3);
-# #     plt.axvline(150, color='k',linewidth=1, alpha=0.3);
-# #     plt.axvline(187.5, color='k', linewidth=1, alpha=0.3);
-# #     plt.axvline(225, color='k', linewidth=1, alpha=0.3);
-# #     plt.xticks([0, 75, 112.5, 150, 187.5, 225, 275], ['-300','0', '150', '300', '450', '600', '800'])
+for task in ['milk','fruit','odour','avg']:
+    avg_significantcoef = big_ranks_SD.loc[:,task,:].groupby(by='ROI').mean()
     
-# #     plt.title(f"ranks participant {i}")
-# #     plt.show()
+    ax = sns.heatmap(avg_significantcoef, cmap="YlGnBu", xticklabels=False)
+    plt.axvline(75, color='k');
+    plt.axvline(112.5, color='k', linewidth=1, alpha=0.3);
+    plt.axvline(150, color='k',linewidth=1, alpha=0.3);
+    plt.axvline(187.5, color='k', linewidth=1, alpha=0.3);
+    plt.axvline(225, color='k', linewidth=1, alpha=0.3);
+    plt.xticks([0, 75, 112.5, 150, 187.5, 225, 275], ['-300','0', '150', '300', '450', '600', '800'])
+    
+    plt.title(f"{task} : ROI Average coefficients (SelectKBest p<.05)");
+    ax.figsize=(15,15)
+    plt.show()
 
-# for roi in kkROI:
-#     ax = avg_big_ranks_SD.loc[roi].plot()
-# plt.legend()
-# ax.set_ylim(ax.get_ylim()[::-1])
-# plt.axvline(75, color='k');
-# plt.axvline(112.5, color='k', linewidth=1, alpha=0.3);
-# plt.axvline(150, color='k',linewidth=1, alpha=0.3);
-# plt.axvline(187.5, color='k', linewidth=1, alpha=0.3);
-# plt.axvline(225, color='k', linewidth=1, alpha=0.3);
-# plt.xticks([0, 75, 112.5, 150, 187.5, 225, 275], ['-300','0', '150', '300', '450', '600', '800'])
-# plt.show()
+avg_significantcoef_SD = big_ranks_SD.loc[:,'avg',:].groupby(by='ROI').mean()
+
+for roi in kkROI:
+    avg_significantcoef_SD.loc[roi].plot()    
+plt.legend()
+ax.set_ylim(ax.get_ylim()[::-1])
+plt.axvline(75, color='k');
+plt.axvline(112.5, color='k', linewidth=1, alpha=0.3);
+plt.axvline(150, color='k',linewidth=1, alpha=0.3);
+plt.axvline(187.5, color='k', linewidth=1, alpha=0.3);
+plt.axvline(225, color='k', linewidth=1, alpha=0.3);
+plt.xticks([0, 75, 112.5, 150, 187.5, 225, 275], ['-300','0', '150', '300', '450', '600', '800'])
+plt.title("SDvsSD ROIs Average coefficients (SelectKBest p<.05)")
+plt.show()
+
 
 # ------------------------------------------------------------
 
@@ -104,10 +105,10 @@ for task in ['milk','fruit','odour','avg']:
 #     plt.title(f"LDvsSD ranks participant {i}")
 #     plt.show()
 
-avg_significantcoef = big_ranks_LD.loc[:,'avg',:].groupby(by='ROI').mean()
+avg_significantcoef_LD = big_ranks_LD.loc[:,'avg',:].groupby(by='ROI').mean()
 
 for roi in kkROI:
-    avg_significantcoef.loc[roi].plot()    
+    avg_significantcoef_LD.loc[roi].plot()    
 plt.legend()
 ax.set_ylim(ax.get_ylim()[::-1])
 plt.axvline(75, color='k');
@@ -118,3 +119,18 @@ plt.axvline(225, color='k', linewidth=1, alpha=0.3);
 plt.xticks([0, 75, 112.5, 150, 187.5, 225, 275], ['-300','0', '150', '300', '450', '600', '800'])
 plt.title("LDvsSD ROIs Average coefficients (SelectKBest p<.05)")
 plt.show()
+
+
+for roi in kkROI:
+    ax = avg_significantcoef_LD.loc[roi].plot()
+    ax = avg_significantcoef_SD.loc[roi].plot()
+    plt.legend(['LD','SD'])
+    plt.axvline(75, color='k');
+    plt.axvline(112.5, color='k', linewidth=1, alpha=0.3);
+    plt.axvline(150, color='k',linewidth=1, alpha=0.3);
+    plt.axvline(187.5, color='k', linewidth=1, alpha=0.3);
+    plt.axvline(225, color='k', linewidth=1, alpha=0.3);
+    plt.xticks([0, 75, 112.5, 150, 187.5, 225, 275], ['-300','0', '150', '300', '450', '600', '800'])
+    plt.title(f"LDvsSD average ranks in {roi}")
+    plt.show()
+    
