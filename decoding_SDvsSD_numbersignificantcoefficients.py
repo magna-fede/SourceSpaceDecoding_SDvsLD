@@ -65,7 +65,7 @@ SDvsSD_scores = []
 SDvsSD_coefficients = []
 SDvsSD_ranks = []
 
-for sub in np.arange(0  ,18):
+for sub in np.arange(1  ,18):
     print(f'Analysing participant number: {sub}')
     # import the dataset containing 120 categories (6 ROIs * 4 tasks *5 categories)
     # each key contains an array with size (number of trials * number of vertices * time points)
@@ -300,12 +300,12 @@ for sub in np.arange(0  ,18):
 
         df_less05 = df.loc[coefscores_mf_ps[1]<.05]
         
-        df_avg = df_less05.groupby(by=0).apply(rms)
+        v_counts = pd.concat([df_less05[0].value_counts()
+                              ,pd.DataFrame(vertices, index=kkROI)],axis=1)
+        v_counts.columns = ['coef','vertices']
+        v_counts['number_coef'] = v_counts['coef'] / v_counts['vertices']
         
-        if len(df_avg)==0:
-            mlkfrt_selected[i] = np.nan*6
-        else:
-            mlkfrt_selected[i] = df_avg        
+        mlkfrt_selected[i] = v_counts['number_coef']         
 
         coefscores_fo_ps = pd.DataFrame(zip(ROI_vertices,
                           SelectKBest(k='all').fit(X_frtodr[:,:,i],
@@ -314,12 +314,12 @@ for sub in np.arange(0  ,18):
 
         df_less05 = df.loc[coefscores_fo_ps[1]<.05]
         
-        df_avg = df_less05.groupby(by=0).apply(rms)
+        v_counts = pd.concat([df_less05[0].value_counts()
+                              ,pd.DataFrame(vertices, index=kkROI)],axis=1)
+        v_counts.columns = ['coef','vertices']
+        v_counts['number_coef'] = v_counts['coef'] / v_counts['vertices']
         
-        if len(df_avg)==0:
-            frtodr_selected[i] = np.nan*6
-        else:
-            frtodr_selected[i] = df_avg       
+        frtodr_selected[i] = v_counts['number_coef']     
             
         coefscores_om_ps = pd.DataFrame(zip(ROI_vertices,
                           SelectKBest(k='all').fit(X_odrmlk[:,:,i],
@@ -328,12 +328,12 @@ for sub in np.arange(0  ,18):
 
         df_less05 = df.loc[coefscores_om_ps[1]<.05]
         
-        df_avg = df_less05.groupby(by=0).apply(rms)
+        v_counts = pd.concat([df_less05[0].value_counts()
+                              ,pd.DataFrame(vertices, index=kkROI)],axis=1)
+        v_counts.columns = ['coef','vertices']
+        v_counts['number_coef'] = v_counts['coef'] / v_counts['vertices']
         
-        if len(df_avg)==0:
-            odrmlk_selected[i] = np.nan*6
-        else:
-            odrmlk_selected[i] = df_avg       
+        odrmlk_selected[i] = v_counts['number_coef']     
         
      
         
@@ -369,5 +369,5 @@ participant = {}
 for i,df in enumerate(SDvsSD_ranks):
     participant[i] = df
 
-with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1109_SDvsSD_avgless05.P", 'wb') as outfile:
+with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1111_SDvsSD_ncoef_less05.P", 'wb') as outfile:
     pickle.dump(participant,outfile)    
