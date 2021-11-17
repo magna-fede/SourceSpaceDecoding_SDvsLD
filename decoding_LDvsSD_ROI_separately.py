@@ -46,7 +46,7 @@ list_mlk_scores = []
 list_frt_scores = []
 list_odr_scores = []
 
-for sub in np.arange(0  ,18):
+for sub in np.arange(0, 18):
     print(sub)
     # import the dataset containing 120 categories (6 ROIs * 4 tasks *5 categories)
     # each key contains an array with size (number of trials * number of vertices * time points)
@@ -77,32 +77,32 @@ for sub in np.arange(0  ,18):
     trials_mlk = pd.DataFrame(columns=['ROI','category','trial','data'])
     trials_frt = pd.DataFrame(columns=['ROI','category','trial','data'])
     trials_odr = pd.DataFrame(columns=['ROI','category','trial','data'])
-
+    trials_ld = pd.DataFrame(columns=['ROI','category','trial','data'])
     
     # comments just on the first section, as it's doing the same job for each
     # task, category, and ROI
     for j,k in enumerate(kk):
         # check the key identity about the task
-        # if k[0:2] == 'LD':
-        #     # check which category is this
-        #     # (this checks if each category in kk2,
-        #     # is present in k, the output[key] currently considered)
-        #     mask_k = [k2 in k for k2 in kk2]
-        #     # and save the category as a np string
-        #     k2 = np.array(kk2)[mask_k][0]
-        #     # check which ROI this is referring to
-        #     mask_ROI = [k_ROI in k for k_ROI in kkROI]
-        #     kROI = np.array(kkROI)[mask_ROI][0]
-        #     # loop over trials
-        #     for i in range(len(output[k])):
-        #             # save data (contained in output[k]) about that ROI
-        #             # for each trial (i) separately
-        #         ls = [kROI, k2, i, output[k][i]]
-        #             # containing info about semantic_category, trial, and data
-        #         row = pd.Series(ls, index=trials_ld.columns)
-        #             # and save in the relevant Dataframe, this case 
-        #             # Task = lexical decision, ROI = lATL
-        #         trials_ld = trials_ld.append(row, ignore_index=True) 
+        if k[0:2] == 'LD':
+            # check which category is this
+            # (this checks if each category in kk2,
+            # is present in k, the output[key] currently considered)
+            mask_k = [k2 in k for k2 in kk2]
+            # and save the category as a np string
+            k2 = np.array(kk2)[mask_k][0]
+            # check which ROI this is referring to
+            mask_ROI = [k_ROI in k for k_ROI in kkROI]
+            kROI = np.array(kkROI)[mask_ROI][0]
+            # loop over trials
+            for i in range(len(output[k])):
+                    # save data (contained in output[k]) about that ROI
+                    # for each trial (i) separately
+                ls = [kROI, k2, i, output[k][i]]
+                    # containing info about semantic_category, trial, and data
+                row = pd.Series(ls, index=trials_ld.columns)
+                    # and save in the relevant Dataframe, this case 
+                    # Task = lexical decision, ROI = lATL
+                trials_ld = trials_ld.append(row, ignore_index=True) 
         
         if k[0:4] == 'milk':
             mask_k = [k2 in k for k2 in kk2]
@@ -145,7 +145,7 @@ for sub in np.arange(0  ,18):
     mlks = pd.DataFrame(columns=kkROI)
     frts = pd.DataFrame(columns=kkROI)
     odrs = pd.DataFrame(columns=kkROI)
-    # lds = pd.DataFrame(columns=kkROI)
+    lds = pd.DataFrame(columns=kkROI)
     
     # in this script, the above passage is redundant (as we don't need to merge
     # data from the same trial for each ROI - but it's convenient in other
@@ -155,15 +155,16 @@ for sub in np.arange(0  ,18):
         mlks[ROI] = trials_mlk['data'][trials_mlk['ROI']==ROI].reset_index(drop=True)
         frts[ROI] = trials_frt['data'][trials_frt['ROI']==ROI].reset_index(drop=True)
         odrs[ROI] = trials_odr['data'][trials_odr['ROI']==ROI].reset_index(drop=True)
-        # lds[ROI] = trials_ld['data'][trials_ld['ROI']==ROI].reset_index(drop=True)
+        lds[ROI] = trials_ld['data'][trials_ld['ROI']==ROI].reset_index(drop=True)
     
     mlks_avg = pd.DataFrame(columns=kkROI)
     frts_avg = pd.DataFrame(columns=kkROI)
     odrs_avg = pd.DataFrame(columns=kkROI)
+    lds_avg = pd.DataFrame(columns=kkROI)
     
     # now let's average 4 trials together
     for ROI in kkROI:
-        for i,tsk in enumerate([frts[ROI],mlks[ROI],odrs[ROI]]):
+        for i,tsk in enumerate([frts[ROI],mlks[ROI],odrs[ROI],lds[ROI]]):
         # make sure the number of trials is a multiple of 4, or eliminate excess
             tsk = np.stack(np.array(tsk))
             while len(tsk)%4 != 0:
@@ -185,6 +186,8 @@ for sub in np.arange(0  ,18):
                 mlks_avg[ROI] = new_trials
             elif i==2:
                 odrs_avg[ROI] = new_trials
+            elif i==3:
+                lds_avg[ROI] = new_trials
         
             
     # prepare a series of classifier applied at each time sample
@@ -194,40 +197,40 @@ for sub in np.arange(0  ,18):
     time_decod = SlidingEstimator(clf, scoring='roc_auc')
     
     # initialise dict for saving scores in participant's list
-    scores_mlkfrt = dict.fromkeys(kkROI)
-    scores_frtodr = dict.fromkeys(kkROI)
-    scores_odrmlk = dict.fromkeys(kkROI)
+    scores_mlk = dict.fromkeys(kkROI)
+    scores_frt = dict.fromkeys(kkROI)
+    scores_odr = dict.fromkeys(kkROI)
 
     # for each roi, create and apply the classifier
     for roi in kkROI:
         # create X matrix for each SD vs LD
-        X_mlkfrt = np.concatenate([np.stack(mlks_avg[roi]),np.stack(frts_avg[roi])])
-        y_mlkfrt = np.array(['milk']*np.stack(mlks_avg[roi]).shape[0] + 
-                            ['fruit']*np.stack(frts_avg[roi]).shape[0])
+        X_mlk = np.concatenate([np.stack(mlks_avg[roi]),np.stack(lds_avg[roi])])
+        y_mlk = np.array(['milk']*np.stack(mlks_avg[roi]).shape[0] + 
+                            ['LD']*np.stack(lds_avg[roi]).shape[0])
         
-        X_frtodr = np.concatenate([np.stack(frts_avg[roi]),np.stack(odrs_avg[roi])])
-        y_frtodr = np.array(['fruit']*np.stack(frts_avg[roi]).shape[0] + 
-                            ['odour']*np.stack(odrs_avg[roi]).shape[0])
-        
-        X_odrmlk = np.concatenate([np.stack(odrs_avg[roi]),np.stack(mlks_avg[roi])])
-        y_odrmlk = np.array(['odour']*np.stack(odrs_avg[roi]).shape[0] + 
-                            ['milk']*np.stack(mlks_avg[roi]).shape[0])
+        X_frt = np.concatenate([np.stack(frts_avg[roi]),np.stack(lds_avg[roi])])
+        y_frt = np.array(['fruit']*np.stack(frts_avg[roi]).shape[0] + 
+                            ['LD']*np.stack(lds_avg[roi]).shape[0])
+
+        X_odr = np.concatenate([np.stack(odrs_avg[roi]),np.stack(lds_avg[roi])])
+        y_odr = np.array(['odour']*np.stack(odrs_avg[roi]).shape[0] + 
+                            ['LD']*np.stack(lds_avg[roi]).shape[0])
         
         # randomise order (or otherwirse SD always before LD)
         # not sure if this is necessary, but it's proably worth to be sure
-        X_mlkfrt, y_mlkfrt = shuffle(X_mlkfrt, y_mlkfrt, random_state=0)
-        X_frtodr, y_frtodr = shuffle(X_frtodr, y_frtodr, random_state=0)
-        X_odrmlk, y_odrmlk = shuffle(X_odrmlk, y_odrmlk, random_state=0)
+        X_mlk, y_mlk = shuffle(X_mlk, y_mlk, random_state=0)
+        X_odr, y_odr = shuffle(X_odr, y_odr, random_state=0)
+        X_frt, y_frt = shuffle(X_frt, y_frt, random_state=0)
         
 
         # Run cross-validated decoding analyses:
         # 5 cross-validations
-        scores_mlkfrt[roi] = cross_val_multiscore(time_decod, X_mlkfrt,
-                                                  y_mlkfrt, cv=5)
-        scores_frtodr[roi] = cross_val_multiscore(time_decod, X_frtodr,
-                                                  y_frtodr, cv=5)
-        scores_odrmlk[roi] = cross_val_multiscore(time_decod, X_odrmlk,
-                                                  y_odrmlk, cv=5)
+        scores_mlk[roi] = cross_val_multiscore(time_decod, X_mlk,
+                                                  y_mlk, cv=5)
+        scores_frt[roi] = cross_val_multiscore(time_decod, X_frt,
+                                                  y_frt, cv=5)
+        scores_odr[roi] = cross_val_multiscore(time_decod, X_odr,
+                                                  y_odr, cv=5)
 
     
     # avg_score will store average performance across the 3 classifiers for each participant
@@ -236,15 +239,15 @@ for sub in np.arange(0  ,18):
     # calculate also the average the performance of each of the 3 models
     for roi in kkROI:
         # first calculcate mean performance for each CV and then for each task
-        avg_score[roi] = np.mean([scores_mlkfrt[roi].mean(0),
-                                  scores_frtodr[roi].mean(0),
-                                  scores_odrmlk[roi].mean(0)],0)
+        avg_score[roi] = np.mean([scores_mlk[roi].mean(0),
+                                  scores_frt[roi].mean(0),
+                                  scores_odr[roi].mean(0)],0)
 
     # append performance to list
     list_avg_scores.append(avg_score)
-    list_mlk_scores.append(scores_mlkfrt)
-    list_frt_scores.append(scores_frtodr)
-    list_odr_scores.append(scores_odrmlk)
+    list_mlk_scores.append(scores_mlk)
+    list_frt_scores.append(scores_frt)
+    list_odr_scores.append(scores_odr)
     
 # df_to_export = pd.DataFrame(list_avg_scores)
 # with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1015_SDvsSD_ROIs_avg_scores.P", 'wb') as outfile:
@@ -260,15 +263,15 @@ for sub in np.arange(0  ,18):
 #     pickle.dump(df_to_export,outfile)
 
 df_to_export = pd.DataFrame(list_avg_scores)
-with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/eachROIseprately/whichSD/1116_SDvsSD_ROIs_avg_scores.P", 'wb') as outfile:
+with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/eachROIseprately/LDvsSD/1116_LDvsSD_ROIs_avg_scores.P", 'wb') as outfile:
     pickle.dump(df_to_export,outfile)
 df_to_export = pd.DataFrame(list_mlk_scores)
-with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/eachROIseprately/whichSD/1116_SDvsSD_ROIs_mlkfrt_scores.P", 'wb') as outfile:
+with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/eachROIseprately/LDvsSD/1116_LDvsSD_ROIs_mlkfrt_scores.P", 'wb') as outfile:
     pickle.dump(df_to_export,outfile)
 df_to_export = pd.DataFrame(list_frt_scores)
-with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/eachROIseprately/whichSD/1116_SDvsSD_ROIs_frtodr_scores.P", 'wb') as outfile:
+with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/eachROIseprately/LDvsSD/1116_LDvsSD_ROIs_frtodr_scores.P", 'wb') as outfile:
     pickle.dump(df_to_export,outfile)
 df_to_export = pd.DataFrame(list_odr_scores)
-with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/eachROIseprately/whichSD/1116_SDvsSD_ROIs_odrmlk_scores.P", 'wb') as outfile:
+with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/eachROIseprately/LDvsSD/1116_LDvsSD_ROIs_odrmlk_scores.P", 'wb') as outfile:
     pickle.dump(df_to_export,outfile)
     

@@ -15,29 +15,29 @@ import seaborn as sns
 
 # load scores result from previous script
 
-# with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1005_SDvsSD_ROIs_avg_scores.P", 'rb') as f:
+with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/eachROIseprately/whichSD/1116_SDvsSD_ROIs_avg_scores.P", 'rb') as f:
+      avg_scores = pickle.load(f)
+
+with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/eachROIseprately/whichSD/1116_SDvsSD_ROIs_mlkfrt_scores.P", 'rb') as f:
+      mlkfrt_scores = pickle.load(f)
+     
+with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/eachROIseprately/whichSD/1116_SDvsSD_ROIs_frtodr_scores.P", 'rb') as f:
+      frtodr_scores = pickle.load(f)
+     
+with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/eachROIseprately/whichSD/1116_SDvsSD_ROIs_odrmlk_scores.P", 'rb') as f:
+      odrmlk_scores = pickle.load(f)
+
+# with open("//imaging/hauk/users/fm02/first_output/1015_SDvsSD_ROIs_avg_scores.P", 'rb') as f:
 #      avg_scores = pickle.load(f)
 
-# with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1005_SDvsSD_ROIs_mlkfrt_scores.P", 'rb') as f:
-#      mlk_scores = pickle.load(f)
+# with open("//imaging/hauk/users/fm02/first_output/1015_SDvsSD_ROIs_mlkfrt_scores.P", 'rb') as f:
+#      mlkfrt_scores = pickle.load(f)
      
-# with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1005_SDvsSD_ROIs_frtodr_scores.P", 'rb') as f:
-#      frt_scores = pickle.load(f)
+# with open("//imaging/hauk/users/fm02/first_output/1015_SDvsSD_ROIs_frtodr_scores.P", 'rb') as f:
+#      frtodr_scores = pickle.load(f)
      
-# with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1005_SDvsSD_ROIs_odrmlk_scores.P", 'rb') as f:
-#      odr_scores = pickle.load(f)
-
-with open("//imaging/hauk/users/fm02/first_output/1015_SDvsSD_ROIs_avg_scores.P", 'rb') as f:
-     avg_scores = pickle.load(f)
-
-with open("//imaging/hauk/users/fm02/first_output/1015_SDvsSD_ROIs_mlkfrt_scores.P", 'rb') as f:
-     mlkfrt_scores = pickle.load(f)
-     
-with open("//imaging/hauk/users/fm02/first_output/1015_SDvsSD_ROIs_frtodr_scores.P", 'rb') as f:
-     frtodr_scores = pickle.load(f)
-     
-with open("//imaging/hauk/users/fm02/first_output/1015_SDvsSD_ROIs_odrmlk_scores.P", 'rb') as f:
-     odrmlk_scores = pickle.load(f)
+# with open("//imaging/hauk/users/fm02/first_output/1015_SDvsSD_ROIs_odrmlk_scores.P", 'rb') as f:
+#      odrmlk_scores = pickle.load(f)
      
 kk2 = ['visual', 'hand', 'hear', 'neutral','emotional']
 kkROI = ['lATL', 'rATL', 'AG', 'PTC', 'IFG', 'PVA']

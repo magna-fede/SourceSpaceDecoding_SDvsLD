@@ -15,16 +15,16 @@ import seaborn as sns
 
 # load scores result from previous script
 
-with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/0928_ROIs_avg_scores.P", 'rb') as f:
+with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/eachROIseprately/LDvsSD/1116_LDvsSD_ROIs_avg_scores.P", 'rb') as f:
      avg_scores = pickle.load(f)
 
-with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/0928_ROIs_mlk_scores.P", 'rb') as f:
+with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/eachROIseprately/LDvsSD/1116_LDvsSD_ROIs_mlkfrt_scores.P", 'rb') as f:
      mlk_scores = pickle.load(f)
      
-with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/0928_ROIs_frt_scores.P", 'rb') as f:
+with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/eachROIseprately/LDvsSD/1116_LDvsSD_ROIs_frtodr_scores.P", 'rb') as f:
      frt_scores = pickle.load(f)
      
-with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/0928_ROIs_odr_scores.P", 'rb') as f:
+with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/eachROIseprately/LDvsSD/1116_LDvsSD_ROIs_odrmlk_scores.P", 'rb') as f:
      odr_scores = pickle.load(f)
      
 kk2 = ['visual', 'hand', 'hear', 'neutral','emotional']
