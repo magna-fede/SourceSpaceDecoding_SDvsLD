@@ -1,19 +1,23 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Sep 30 14:37:27 2021
+
+@author: fm02
+"""
+
+
 #!/usr/bin/env python
 # coding: utf-8
 
-# # Data for science Residency Project
-# 
-# In this project I will apply some of the notions lernt during the course to try to predict which brain regions and at which time point are sensitive to the different amount of semantic resources necessary for completing two different tasks. To do this, we will look at the source estimated activity of 6 Regions of Interest (ROIs) for one participant. The two tasks (lexical decision and semantic decision) are belived to vary in the amount of semantic resources necessary for completing the task. The activity is related to -300 ms to 900 ms post stimulus presentation.
-# We will try to predict to which task each trial belongs to and, after that, we will try to understand which ROI carries is sensitive to different semantics demands, by looking at the average and the maximum coefficient in each ROI at each time point.
 
 # Import some relevant packages.
-# mne is a package used in the analysis of MEG and EEG brain data. We are importing some functions useful for decoding brain signal.
-# 
+
 
 import numpy as np
 import pandas as pd
 import pickle
 import random
+
 
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
@@ -31,6 +35,19 @@ def chunks(l, n):
     for i in range(0, len(l), n):
         yield l[i:i + n]
 
+def rms(example):
+    """Compute root mean square of each ROI.
+    Input is a dataframe of length=n_vertices."""
+    # first transform Series in np array of dimension n_vertics*timepoints
+    example = np.vstack(np.array(example))
+    # create np.array where to store info
+    rms_example = np.zeros(example.shape[1])
+    # loop over timepoints
+    for i in np.arange(0,example.shape[1]):
+        rms_example[i] = np.sqrt(np.mean(example[:,i]**2))
+    
+    return rms_example 
+
 def trials_no_category(row):
     """Change number of trials when ignoring category.
     Adding 100 for each category so that each hundreds correspond to a category."""
@@ -46,24 +63,20 @@ def trials_no_category(row):
         row['trial'] = row['trial'] + 400
     
     return row
-    
-SDLD_scores = []
-SDLD_coefficients = []
-SDLD2_coefficients = []
+        
+SDvsSD_scores = []
+SDvsSD_coefficients = []
+cat_scores = []
 
 for sub in np.arange(0  ,18):
-    print(f"Analysing subject {sub}")
+    print(f'Analysing participant number: {sub}')
     # import the dataset containing 120 categories (6 ROIs * 4 tasks *5 categories)
     # each key contains an array with size (number of trials * number of vertices * time points)
-    # with open(f'//cbsu/data/imaging/hauk/users/fm02/dataSDLD/activities_sub_{sub}.json', 'rb') as f:
+    # with open(f'//cbsu/data/Imaging/hauk/users/fm02/dataSDLD/activities_sub_{sub}.json', 'rb') as f:
     #     output = pickle.load(f)
 
-    with open(f'/imaging/hauk/users/fm02/dataSDLD/activities_sub_{sub}.json', 'rb') as f:
-        output = pickle.load(f)    
-    
-    
-    # with open(f'C:/Users/User/OwnCloud/DSR/dataSDLD/activities_sub_{sub}.json', 'rb') as f:
-    #     output = pickle.load(f)    
+    with open(f'//imaging/hauk/users/fm02/dataSDLD/activities_sub_{sub}.json', 'rb') as f:
+        output = pickle.load(f)
     
     kk = list(output.keys())
     
@@ -204,14 +217,11 @@ for sub in np.arange(0  ,18):
     print(lds.shape) 
     print(frts.shape)
     print(odrs.shape)
-    # The above shapes refletc (n_trials * n_vertices * timpoints), as we can see the number of trials is similar, and we have the same number of vertices and timepoints (aka our brain signal) for each trial.
-    
-    # We now want to group each vertex with the ROI they belong to (as we lost this information during the manipulation of the data).
     
     vertices = []
     
-    for roi in trials_mlk_ignore[trials_mlk_ignore['trial']==0]['data']:
-        vertices.append(roi.shape[0])
+    for trial in trials_mlk_ignore['data'][trials_mlk_ignore['trial']==0]:
+        vertices.append(trial.shape[0])
     
     print([v for v in vertices])
     
@@ -229,189 +239,102 @@ for sub in np.arange(0  ,18):
     # contrasting each semantic decision task vs lexical decision task
     # check when and where areas are sensitive to task difference on average
     
-    X_mlk = np.concatenate([mlks , lds])
-    y_mlk = np.array(['milk']*len(mlks) + ['LD']*len(lds))
+    X_mlkfrt = np.concatenate([mlks , frts])
+    y_mlkfrt = np.array(['milk']*len(mlks) + ['fruit']*len(frts))
     
-    X_frt = np.concatenate([frts , lds])
-    y_frt = np.array(['fruit']*len(frts) + ['LD']*len(lds))
+    X_frtodr = np.concatenate([frts , odrs])
+    y_frtodr = np.array(['fruit']*len(frts) + ['odour']*len(odrs))
     
-    X_odr = np.concatenate([odrs , lds])
-    y_odr = np.array(['odour']*len(odrs) + ['LD']*len(lds))
+    X_odrmlk = np.concatenate([odrs , mlks])
+    y_odrmlk = np.array(['odour']*len(odrs) + ['milk']*len(mlks))
     
     
-    X_mlk, y_mlk = shuffle(X_mlk, y_mlk, random_state=0)
-    X_frt, y_frt = shuffle(X_frt, y_frt, random_state=0)
-    X_odr, y_odr = shuffle(X_odr, y_odr, random_state=0)
+    X_mlkfrt, y_mlkfrt = shuffle(X_mlkfrt, y_mlkfrt, random_state=0)
+    X_frtodr, y_frtodr = shuffle(X_frtodr, y_frtodr, random_state=0)
+    X_odrmlk, y_odrmlk = shuffle(X_odrmlk, y_odrmlk, random_state=0)
     
     # We create and run the model. We expect the model to perform at chance before the presentation of the stimuli (no ROI should be sensitive to task/semantics demands before the presentation of a word).
     
     # prepare a series of classifier applied at each time sample
     clf = make_pipeline(StandardScaler(),  # z-score normalization
-                        SelectKBest(f_classif, k='all'),  # it's not the whole brain so I think we are fine using them all
+                        SelectKBest(f_classif, k='all'),  # select features for speed
                         LinearModel(LinearDiscriminantAnalysis(solver="svd")))
-    
     time_decod = SlidingEstimator(clf, scoring='roc_auc')
     
-    ############################################################################
-    ####### skip cross_validation procedure for now ############################
-    ####### (as we don't care about scores), because scores works, ############
-    ####### but patterns don't work! ##########################################
-
-
     # Run cross-validated decoding analyses:
-    scores_mlk = cross_val_multiscore(time_decod, X_mlk, y_mlk, cv=5)
-    scores_frt = cross_val_multiscore(time_decod, X_frt, y_frt, cv=5)
-    scores_odr = cross_val_multiscore(time_decod, X_odr, y_odr, cv=5)
+    scores_mlkfrt = cross_val_multiscore(time_decod, X_mlkfrt, y_mlkfrt, cv=5)
+    scores_frtodr = cross_val_multiscore(time_decod, X_frtodr, y_frtodr, cv=5)
+    scores_odrmlk = cross_val_multiscore(time_decod, X_odrmlk, y_odrmlk, cv=5)
     
-    scores = pd.DataFrame(list(zip(scores_mlk, scores_frt, scores_odr)),
-                          columns=['milk','fruit','odour'])
-    SDLD_scores.append(scores)
-     
+    scores = pd.DataFrame(list(zip(scores_mlkfrt, scores_frtodr, scores_odrmlk)),
+                          columns=['milkVSfruit',
+                                   'fruitVSodour', 
+                                   'odourVSmilk'])
+    SDvsSD_scores.append(scores)
+    
     # HEY!
-    # YES thanks mne.
+    # thanks mne.
     # https://github.com/mne-tools/mne-python/blob/maint/0.23/mne/decoding/base.py#L291-L355
     # line 93
     # patterns does already apply Haufe's trick
     
-    time_decod.fit(X_mlk, y_mlk)
-    patterns_mlk = get_coef(time_decod, 'patterns_', inverse_transform=True)
+    time_decod.fit(X_mlkfrt, y_mlkfrt)
+    patterns_mlkfrt = get_coef(time_decod, 'patterns_', inverse_transform=True)
     
-    time_decod.fit(X_frt, y_frt)
-    patterns_frt = get_coef(time_decod, 'patterns_', inverse_transform=True)
+    time_decod.fit(X_frtodr, y_frtodr)
+    patterns_frtodr = get_coef(time_decod, 'patterns_', inverse_transform=True)
     
-    time_decod.fit(X_odr, y_odr)
-    patterns_odr = get_coef(time_decod, 'patterns_', inverse_transform=True)
+    time_decod.fit(X_odrmlk, y_odrmlk)
+    patterns_odrmlk = get_coef(time_decod, 'patterns_', inverse_transform=True)
     
     # this df has 4 columns:
         # one codes to which ROI the vertex belongs to
         # the other three refers to each task.
 
-    df = pd.DataFrame(zip(ROI_vertices, patterns_mlk, patterns_frt, patterns_odr),columns=['ROI','milk', 'fruit', 'odour'])
+    df = pd.DataFrame(zip(ROI_vertices, 
+                          patterns_mlkfrt, 
+                          patterns_frtodr, 
+                          patterns_odrmlk),
+                      columns=['ROI',
+                               'milkVSfruit',
+                               'fruitVSodour', 
+                               'odourVSmilk'])
 
     
     avg = []
     for i in range(len(df)):
-        avg.append(np.mean([df['milk'][i],df['fruit'][i],df['odour'][i]],0))
+        avg.append(np.mean([df['milkVSfruit'][i],
+                            df['fruitVSodour'][i],
+                            df['odourVSmilk'][i]],0))
     df['avg'] = avg
 
     
-    SDLD_coefficients.append(df)
+    SDvsSD_coefficients.append(df)
     
-
-    
-    # ##########################################################################
-    # ############################### FIRST APPROACH ###########################
-    # ##########################################################################
-    # ##########################################################################
-    
-    # # here I use covariance matrix as calculated in 
-    
-    # # consider each classifier separately
-    # time_decod.fit(X_mlk, y_mlk)
-    
-    # # retrieve coefficients
-    # coef_mlk = get_coef(time_decod, 'coef_', inverse_transform=True)
-    
-    # # retrieve covariance matrix
-    # # HEY consider that this convariance matrix has shape
-    # # (n_vertices*n_vertices*timepoints)
-    # cov_mlk = get_coef(time_decod, 'covariance_', inverse_transform=True)
-
-    # # reshape coef mlk from (n_vertices*1*timepoint to n_vertices*timepoints)    
-    # coef_mlk = coef_mlk.reshape(coef_mlk.shape[0],coef_mlk.shape[2])
-    
-    # # get patterns using covariance matrix from LDA
-    # patterns_mlk = []
-
-    # for i in range(300):
-    #     patterns_mlk.append(cov_mlk[:,:,i].dot(coef_mlk[:,i])) 
-    
-    # # convert to array and transpose (so that dimension is 
-    # # (n_vertices*timepoints))
-    # patterns_mlk = np.array(patterns_mlk).T
-    
-    
-    # # now do the same for the other classifiers
-    
-    # time_decod.fit(X_frt, y_frt)
-    # coef_frt = get_coef(time_decod, 'coef_', inverse_transform=True)
-        
-    # cov_frt = get_coef(time_decod, 'covariance_', inverse_transform=True)
-
-    # # reshape coef frt from (n_vertices*1*timepoint to n_vertices*timepoints)    
-    # coef_frt = coef_frt.reshape(coef_frt.shape[0],coef_frt.shape[2])
-    
-    # # get patterns using covariance matrix from LDA
-    # patterns_frt = []
-
-    # for i in range(300):
-    #     patterns_frt.append(cov_frt[:,:,i].dot(coef_frt[:,i])) 
-    
-    # # convert to array and transpose (so that dimension is 
-    # # (n_vertices*timepoints))
-    # patterns_frt = np.array(patterns_frt).T
-        
-    # time_decod.fit(X_odr, y_odr)
-    # coef_odr = get_coef(time_decod, 'coef_', inverse_transform=True)
-        
-    # cov_odr = get_coef(time_decod, 'covariance_', inverse_transform=True)
-
-    # # reshape coef odr from (n_vertices*1*timepoint to n_vertices*timepoints)    
-    # coef_odr = coef_odr.reshape(coef_odr.shape[0],coef_odr.shape[2])
-    
-    # # get patterns using covariance matrix from LDA
-    # patterns_odr = []
-
-    # for i in range(300):
-    #     patterns_odr.append(cov_odr[:,:,i].dot(coef_odr[:,i])) 
-    
-    # # convert to array and transpose (so that dimension is 
-    # # (n_vertices*timepoints))
-    # patterns_odr = np.array(patterns_odr).T
-
-    # # or do it the other way, append     
-    
-
-    # # this df has 4 columns:
-    #     # one codes to which ROI the vertex belongs to
-    #     # the other three refers to each task.
-
-    # df = pd.DataFrame(zip(ROI_vertices, 
-    #                       patterns_mlk, 
-    #                       patterns_frt, 
-    #                       patterns_odr),
-    #                   columns=['ROI',
-    #                            'milk', 
-    #                            'fruit', 
-    #                            'odour'])
-
-    
-    # avg = []
-    # for i in range(len(df)):
-    #     avg.append(np.mean([df['milk'][i],df['fruit'][i],df['odour'][i]],0))
-    # df['avg'] = avg
-    
-    # SDLD_coefficients.append(df)
-
- 
-
-
-
-# df_to_export = pd.DataFrame(SDLD_scores)
-# with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1104_LDA_SDLD_scores.P",
-#           'wb') as outfile:
+# df_to_export = pd.DataFrame(SDvsSD_scores)
+# with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1005_SDvsSD_avg_scores.P", 'wb') as outfile:
 #     pickle.dump(df_to_export,outfile)
-    
-df_to_export = pd.DataFrame(SDLD_coefficients)
-with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1104_LDA_SDLD_coefficients.P",
-          'wb') as outfile:
-    pickle.dump(df_to_export,outfile)
-  
-df_to_export = pd.DataFrame(SDLD2_coefficients)
-with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1104_LDA_SDLD-long_coefficients.P",
-          'wb') as outfile:
-    pickle.dump(df_to_export,outfile)
+# df_to_export = pd.DataFrame(SDvsSD_coefficients)
+# with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1005_SDvsSD_coefficients.P", 'wb') as outfile:
+#     pickle.dump(df_to_export,outfile)
 
-    
+# create ranks object
 
- 
+mlkfrt_ranks = pd.DataFrame(index=kkROI,
+                            columns=np.arange(-300,900,4).astype(str))
+
+for i in range(300):
+    coefscores = pd.DataFrame(zip(ROI_vertices,
+                              SelectKBest(k='all').fit(X_mlkfrt[:,:,i],
+                                                       y_mlkfrt).scores_))
+    coefscores = coefscores.sort_values(by=1, ascending=True).reset_index()
+    coefscores = coefscores.tail(58)
+
+    coef_rank = pd.Series(index=kkROI)
+
+    for roi in kkROI:
+        coef_rank[roi] = coefscores[coefscores[0]==roi].index.values.sum()
+    coef_rank = coef_rank.sort_values(ascending=False)
+    coef_rank_app = pd.Series(np.arange(1,7), index=coef_rank.index.values )
+    
+    mlkfrt_ranks[str(-300+4*i)] = coef_rank_app

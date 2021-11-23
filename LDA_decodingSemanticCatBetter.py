@@ -171,46 +171,47 @@ for sub in np.arange(0  ,18):
     for tsk in list(trials.keys()):
         trials_semK[tsk] = divide_semK(trials[tsk])
         
-
-    # now let's average 4 trials together
-    sub_lds = {}
-    sub_frts = {}
-    sub_mlks = {}
-    sub_odrs = {}
+    # try not averaging because not enough trials otherwise
     
-    for dic in [sub_lds, sub_frts, sub_mlks, sub_odrs]:
-        for semK in kk2:
-            dic[semK] = []
+    # # now let's average 4 trials together
+    # sub_lds = {}
+    # sub_frts = {}
+    # sub_mlks = {}
+    # sub_odrs = {}
     
-    for i, tsk in enumerate(trials_semK.values()):
+    # for dic in [sub_lds, sub_frts, sub_mlks, sub_odrs]:
+    #     for semK in kk2:
+    #         dic[semK] = []
+    
+    # for i, tsk in enumerate(trials_semK.values()):
      
-        # make sure the number of trials is a multiple of 4, or eliminate excess
-        for k in tsk.keys():
+    #     # make sure the number of trials is a multiple of 4, or eliminate excess
+    #     for k in tsk.keys():
             
-            while len(tsk[k])%4 != 0:
-                tsk[k] = np.delete(tsk[k], len(tsk[k])-1, 0)
-        # create random groups of trials
-            new_tsk = np.split(tsk[k],len(tsk[k])/4)
-            new_trials = []
-        # calculate average for each timepoint of the 4 trials
-            for nt in new_tsk:
-                new_trials.append(np.mean(nt,0))
-            # assign group it in the corresponding task
+    #         while len(tsk[k])%4 != 0:
+    #             tsk[k] = np.delete(tsk[k], len(tsk[k])-1, 0)
+    #     # create random groups of trials
+    #         new_tsk = np.split(tsk[k],len(tsk[k])/4)
+    #         new_trials = []
+    #     # calculate average for each timepoint of the 4 trials
+    #         for nt in new_tsk:
+    #             new_trials.append(np.mean(nt,0))
+    #         # assign group it in the corresponding task
             
-            if i==0:
-                sub_lds[k] = new_trials
-            elif i==1:
-                sub_mlks[k] = new_trials
-            elif i==2:
-                sub_frts[k] = new_trials
-            elif i==3:
-                sub_odrs[k] = new_trials
+    #         if i==0:
+    #             sub_lds[k] = new_trials
+    #         elif i==1:
+    #             sub_mlks[k] = new_trials
+    #         elif i==2:
+    #             sub_frts[k] = new_trials
+    #         elif i==3:
+    #             sub_odrs[k] = new_trials
             
-    sub = {}
-    sub['ld'] = sub_lds
-    sub['mlk'] = sub_mlks
-    sub['frt'] = sub_frts
-    sub['odr'] = sub_odrs
+    # subt = {}
+    # subt['ld'] = sub_lds
+    # subt['mlk'] = sub_mlks
+    # subt['frt'] = sub_frts
+    # subt['odr'] = sub_odrs
     
     # We create and run the model. We expect the model to perform at chance before the presentation of the stimuli (no ROI should be sensitive to task/semantics demands before the presentation of a word).
     
@@ -232,13 +233,14 @@ for sub in np.arange(0  ,18):
     scores['frt'] = []
     scores['odr'] = []
     
-    for task in sub.keys():
+    # just use subt instead of trials_semK if you want to have average of trials
+    for task in trials_semK.keys():
         for semKvsemK in comb:
-            X = np.concatenate([sub[task][semKvsemK[0]],
-                                    sub[task][semKvsemK[1]]])
+            X = np.concatenate([trials_semK[task][semKvsemK[0]],
+                                    trials_semK[task][semKvsemK[1]]])
             
-            y = np.array([semKvsemK[0]]*len(sub[task][semKvsemK[0]]) + \
-                             [semKvsemK[1]]*len(sub[task][semKvsemK[1]]))
+            y = np.array([semKvsemK[0]]*len(trials_semK[task][semKvsemK[0]]) + \
+                             [semKvsemK[1]]*len(trials_semK[task][semKvsemK[1]]))
             
             X, y = shuffle(X, y, random_state=0)
             
@@ -256,16 +258,189 @@ for sub in np.arange(0  ,18):
 #           'wb') as outfile:
 #     pickle.dump(df_to_export,outfile)
     
-df_to_export = pd.DataFrame(SDLD_coefficients)
-with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1104_LDA_SDLD_coefficients.P",
-          'wb') as outfile:
-    pickle.dump(df_to_export,outfile)
-  
-df_to_export = pd.DataFrame(SDLD2_coefficients)
-with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1104_LDA_SDLD-long_coefficients.P",
-          'wb') as outfile:
-    pickle.dump(df_to_export,outfile)
+# df_to_export = pd.DataFrame(participant_scores)
+# with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1118_LDA_SemK_scores.P",
+#           'wb') as outfile:
+#     pickle.dump(df_to_export,outfile)
 
     
+with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1118_LDA_SemK_scores.P", 'rb') as f:
+     df_to_export = pickle.load(f)
 
+
+import seaborn as sns
+import matplotlib.pyplot as plt
+from scipy.stats import sem
+
+LD_mean = []
+
+for participant in df_to_export['ld']:
+    avg_each_combination = np.array(participant).mean(axis=1)
+    avg_task = avg_each_combination.mean(axis=0)
+    LD_mean.append(avg_task)
+
+MLK_mean = []
+
+for participant in df_to_export['mlk']:
+    avg_each_combination = np.array(participant).mean(axis=1)
+    avg_task = avg_each_combination.mean(axis=0)
+    MLK_mean.append(avg_task)
+
+FRT_mean = []
+
+for participant in df_to_export['frt']:
+    avg_each_combination = np.array(participant).mean(axis=1)
+    avg_task = avg_each_combination.mean(axis=0)
+    FRT_mean.append(avg_task)
+
+ODR_mean = []
+
+for participant in df_to_export['odr']:
+    avg_each_combination = np.array(participant).mean(axis=1)
+    avg_task = avg_each_combination.mean(axis=0)
+    ODR_mean.append(avg_task)
+
+from scipy.stats import ttest_1samp
+from scipy import stats
+
+from mne.stats import permutation_cluster_1samp_test
+   
+_ , LDpvalues = ttest_1samp(LD_mean, popmean=.5, axis=0)
+
+plt.axhline(x=LDpvalues[LDpvalues<.05],y=.48)
+
+
+# Reshape data to what is equivalent to (n_samples, n_space, n_time)
+LD_mean.shape = (18, 1, 300)
+# Compute threshold from t distribution (this is also the default)
+threshold = stats.distributions.t.ppf(1 - 0.05, 18 - 1)
+Lt_clust, Lclusters, Lp_values, H0 = permutation_cluster_1samp_test(
+    LD_mean-.5, n_jobs=1, threshold=threshold, adjacency=None,
+    n_permutations='all')
+# Put the cluster data in a viewable format
+Lp_clust = np.ones((1,300))
+for cl, p in zip(Lclusters, Lp_values):
+    Lp_clust[cl] = p
+
+MLK_mean.shape = (18, 1, 300)
+# Compute threshold from t distribution (this is also the default)
+threshold = stats.distributions.t.ppf(1 - 0.05, 18 - 1)
+Mt_clust, Mclusters, Mp_values, MH0 = permutation_cluster_1samp_test(
+    MLK_mean-.5, n_jobs=1, threshold=threshold, adjacency=None,
+    n_permutations='all')
+# Put the cluster data in a viewable format
+Mp_clust = np.ones((1,300))
+for cl, p in zip(Mclusters, Mp_values):
+    Mp_clust[cl] = p
+
+
+FRT_mean.shape = (18, 1, 300)
+# Compute threshold from t distribution (this is also the default)
+threshold = stats.distributions.t.ppf(1 - 0.05, 18 - 1)
+Ft_clust, Fclusters, Fp_values, FH0 = permutation_cluster_1samp_test(
+    FRT_mean-.5, n_jobs=1, threshold=threshold, adjacency=None,
+    n_permutations='all')
+# Put the cluster data in a viewable format
+Fp_clust = np.ones((1,300))
+for cl, p in zip(Fclusters, Fp_values):
+    Fp_clust[cl] = p
+
+ODR_mean.shape = (18, 1, 300)
+# Compute threshold from t distribution (this is also the default)
+threshold = stats.distributions.t.ppf(1 - 0.05, 18 - 1)
+Ot_clust, Oclusters, Op_values, OH0 = permutation_cluster_1samp_test(
+    ODR_mean-.5, n_jobs=1, threshold=threshold, adjacency=None,
+    n_permutations='all')
+# Put the cluster data in a viewable format
+Op_clust = np.ones((1,300))
+for cl, p in zip(Oclusters, Op_values):
+    Op_clust[cl] = p
+
+times = np.arange(-300,900,4)
+
+print(f'MILK TASK : Decoding semantic category at timepoints: \
+      {times[np.where(Mp_clust < 0.05)[1]]}')
+print(f'FRUIT TASK : Decoding semantic category at timepoints: \
+      {times[np.where(Fp_clust < 0.05)[1]]}')
+print(f'ODOUR TASK : Decoding semantic category at timepoints: \
+      {times[np.where(Op_clust < 0.05)[1]]}')
+print(f'LEXICAL DECISION: Decoding semantic category at timepoints: \
+      {times[np.where(Lp_clust < 0.05)[1]]}')
+
+
+
+
+LD_mean = np.array(LD_mean).reshape((18,300))
+MLK_mean = np.array(MLK_mean).reshape((18,300))
+FRT_mean = np.array(FRT_mean).reshape((18,300))
+ODR_mean = np.array(ODR_mean).reshape((18,300))
+
+sns.lineplot(x=times, y=np.mean(LD_mean,0))
+plt.fill_between(x=times, \
+                 y1=(np.mean(LD_mean,0)-sem(LD_mean,0)), \
+                 y2=(np.mean(LD_mean,0)+sem(LD_mean,0)), \
+                 color='b', alpha=.1)
+plt.axvline(0, color='k');
+plt.axvline(50, color='k', linewidth=1, alpha=0.3);
+plt.axvline(100, color='k',linewidth=1, alpha=0.3);
+plt.axvline(150, color='k', linewidth=1, alpha=0.3);
+plt.axvline(200, color='k', linewidth=1, alpha=0.3);
+plt.title('LD Semantic Category Decoding')
+plt.axhline(.5, color='k', linestyle='--', label='chance');
+# plt.legend();
+plt.show();
+
+
+sns.lineplot(x=times, y=np.mean(MLK_mean,0))
+plt.fill_between(x=times, \
+                 y1=(np.mean(MLK_mean,0)-sem(MLK_mean,0)), \
+                 y2=(np.mean(MLK_mean,0)+sem(MLK_mean,0)), \
+                 color='b', alpha=.1)
+plt.axvline(0, color='k');
+plt.axvline(50, color='k', linewidth=1, alpha=0.3);
+plt.axvline(100, color='k',linewidth=1, alpha=0.3);
+plt.axvline(150, color='k', linewidth=1, alpha=0.3);
+plt.axvline(200, color='k', linewidth=1, alpha=0.3);
+plt.axhline(.5, color='k', linestyle='--', label='chance');
+plt.axvspan(times[np.where(Mp_clust < 0.05)[1]][0],
+            times[np.where(Mp_clust < 0.05)[1]][-1], 
+           label="Cluster based permutation p<.05",
+           color="green", alpha=0.3)
+plt.title('MILK Semantic Category Decoding');
+# plt.legend();
+plt.show();
  
+sns.lineplot(x=times, y=np.mean(FRT_mean,0))
+plt.fill_between(x=times, \
+                 y1=(np.mean(FRT_mean,0)-sem(FRT_mean,0)), \
+                 y2=(np.mean(FRT_mean,0)+sem(FRT_mean,0)), \
+                 color='b', alpha=.1)
+plt.axvline(0, color='k');
+plt.axvline(50, color='k', linewidth=1, alpha=0.3);
+plt.axvline(100, color='k',linewidth=1, alpha=0.3);
+plt.axvline(150, color='k', linewidth=1, alpha=0.3);
+plt.axvline(200, color='k', linewidth=1, alpha=0.3);
+plt.axhline(.5, color='k', linestyle='--', label='chance');
+plt.axvspan(times[np.where(Fp_clust < 0.05)[1]][0],
+            times[np.where(Fp_clust < 0.05)[1]][-1], 
+           label="Cluster based permutation p<.05",
+           color="green", alpha=0.3)
+plt.title('FRUIT Semantic Category Decoding');
+# plt.legend();
+plt.show();
+
+sns.lineplot(x=times, y=np.mean(ODR_mean,0))
+plt.fill_between(x=times, \
+                 y1=(np.mean(ODR_mean,0)-sem(ODR_mean,0)), \
+                 y2=(np.mean(ODR_mean,0)+sem(ODR_mean,0)), \
+                 color='b', alpha=.1)
+plt.axvline(0, color='k');
+plt.axvline(50, color='k', linewidth=1, alpha=0.3);
+plt.axvline(100, color='k',linewidth=1, alpha=0.3);
+plt.axvline(150, color='k', linewidth=1, alpha=0.3);
+plt.axvline(200, color='k', linewidth=1, alpha=0.3);
+plt.axhline(.5, color='k', linestyle='--', label='chance');
+plt.title('ODOUR Semantic Category Decoding'); 
+# plt.legend();
+plt.show();
+
