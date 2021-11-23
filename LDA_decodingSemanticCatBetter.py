@@ -368,8 +368,6 @@ print(f'LEXICAL DECISION: Decoding semantic category at timepoints: \
       {times[np.where(Lp_clust < 0.05)[1]]}')
 
 
-
-
 LD_mean = np.array(LD_mean).reshape((18,300))
 MLK_mean = np.array(MLK_mean).reshape((18,300))
 FRT_mean = np.array(FRT_mean).reshape((18,300))

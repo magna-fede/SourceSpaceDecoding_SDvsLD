@@ -55,11 +55,11 @@ for sub in np.arange(0  ,18):
     print(f"Analysing subject {sub}")
     # import the dataset containing 120 categories (6 ROIs * 4 tasks *5 categories)
     # each key contains an array with size (number of trials * number of vertices * time points)
-    # with open(f'//cbsu/data/imaging/hauk/users/fm02/dataSDLD/activities_sub_{sub}.json', 'rb') as f:
-    #     output = pickle.load(f)
+    with open(f'//cbsu/data/imaging/hauk/users/fm02/dataSDLD/activities_sub_{sub}.json', 'rb') as f:
+        output = pickle.load(f)
 
-    with open(f'/imaging/hauk/users/fm02/dataSDLD/activities_sub_{sub}.json', 'rb') as f:
-        output = pickle.load(f)    
+    # with open(f'/imaging/hauk/users/fm02/dataSDLD/activities_sub_{sub}.json', 'rb') as f:
+    #     output = pickle.load(f)    
     
     
     # with open(f'C:/Users/User/OwnCloud/DSR/dataSDLD/activities_sub_{sub}.json', 'rb') as f:
@@ -381,9 +381,9 @@ for sub in np.arange(0  ,18):
     #                       patterns_frt, 
     #                       patterns_odr),
     #                   columns=['ROI',
-    #                            'milk', 
-    #                            'fruit', 
-    #                            'odour'])
+    #                             'milk', 
+    #                             'fruit', 
+    #                             'odour'])
 
     
     # avg = []
@@ -397,20 +397,20 @@ for sub in np.arange(0  ,18):
 
 
 
-# df_to_export = pd.DataFrame(SDLD_scores)
-# with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1104_LDA_SDLD_scores.P",
-#           'wb') as outfile:
-#     pickle.dump(df_to_export,outfile)
+df_to_export = pd.Series(SDLD_scores)
+with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1123_LDA_SDLD_scores.P",
+          'wb') as outfile:
+    pickle.dump(df_to_export,outfile)
     
-df_to_export = pd.DataFrame(SDLD_coefficients)
-with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1104_LDA_SDLD_coefficients.P",
+df_to_export = pd.Series(SDLD_coefficients)
+with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1123_LDA_SDLD_coefficients.P",
           'wb') as outfile:
     pickle.dump(df_to_export,outfile)
   
-df_to_export = pd.DataFrame(SDLD2_coefficients)
-with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1104_LDA_SDLD-long_coefficients.P",
-          'wb') as outfile:
-    pickle.dump(df_to_export,outfile)
+# df_to_export = pd.DataFrame(SDLD2_coefficients)
+# with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1104_LDA_SDLD-long_coefficients.P",
+#           'wb') as outfile:
+#     pickle.dump(df_to_export,outfile)
 
     
 
