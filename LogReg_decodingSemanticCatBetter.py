@@ -63,7 +63,7 @@ def divide_semK(trials):
 
 participant_scores = []
 
-for sub in np.arange(0  ,18):
+for sub in np.arange(0, 18):
     print(f"Analysing subject {sub}")
     # import the dataset containing 120 categories (6 ROIs * 4 tasks *5 categories)
     # each key contains an array with size (number of trials * number of vertices * time points)
@@ -173,53 +173,55 @@ for sub in np.arange(0  ,18):
         
     # try not averaging because not enough trials otherwise
     
-    # # now let's average 4 trials together
-    # sub_lds = {}
-    # sub_frts = {}
-    # sub_mlks = {}
-    # sub_odrs = {}
+    # now let's average 3 trials together
+    sub_lds = {}
+    sub_frts = {}
+    sub_mlks = {}
+    sub_odrs = {}
     
-    # for dic in [sub_lds, sub_frts, sub_mlks, sub_odrs]:
-    #     for semK in kk2:
-    #         dic[semK] = []
+    for dic in [sub_lds, sub_frts, sub_mlks, sub_odrs]:
+        for semK in kk2:
+            dic[semK] = []
     
-    # for i, tsk in enumerate(trials_semK.values()):
+    for i, tsk in enumerate(trials_semK.values()):
      
-    #     # make sure the number of trials is a multiple of 4, or eliminate excess
-    #     for k in tsk.keys():
+        # make sure the number of trials is a multiple of 3, or eliminate excess
+        for k in tsk.keys():
             
-    #         while len(tsk[k])%4 != 0:
-    #             tsk[k] = np.delete(tsk[k], len(tsk[k])-1, 0)
-    #     # create random groups of trials
-    #         new_tsk = np.split(tsk[k],len(tsk[k])/4)
-    #         new_trials = []
-    #     # calculate average for each timepoint of the 4 trials
-    #         for nt in new_tsk:
-    #             new_trials.append(np.mean(nt,0))
-    #         # assign group it in the corresponding task
+            while len(tsk[k])%3 != 0:
+                tsk[k] = np.delete(tsk[k], len(tsk[k])-1, 0)
+        # create random groups of trials
+            new_tsk = np.split(tsk[k],len(tsk[k])/3)
+            new_trials = []
+        # calculate average for each timepoint of the 3 trials
+            for nt in new_tsk:
+                new_trials.append(np.mean(nt,0))
+            # assign group it in the corresponding task
             
-    #         if i==0:
-    #             sub_lds[k] = new_trials
-    #         elif i==1:
-    #             sub_mlks[k] = new_trials
-    #         elif i==2:
-    #             sub_frts[k] = new_trials
-    #         elif i==3:
-    #             sub_odrs[k] = new_trials
+            if i==0:
+                sub_lds[k] = new_trials
+            elif i==1:
+                sub_mlks[k] = new_trials
+            elif i==2:
+                sub_frts[k] = new_trials
+            elif i==3:
+                sub_odrs[k] = new_trials
             
-    # subt = {}
-    # subt['ld'] = sub_lds
-    # subt['mlk'] = sub_mlks
-    # subt['frt'] = sub_frts
-    # subt['odr'] = sub_odrs
+    subt = {}
+    subt['ld'] = sub_lds
+    subt['mlk'] = sub_mlks
+    subt['frt'] = sub_frts
+    subt['odr'] = sub_odrs
+    
+    trials_semK = subt
     
     # We create and run the model. We expect the model to perform at chance before the presentation of the stimuli (no ROI should be sensitive to task/semantics demands before the presentation of a word).
     
     # prepare a series of classifier applied at each time sample
     clf = make_pipeline(StandardScaler(),  # z-score normalization
                         SelectKBest(f_classif, k='all'),  # it's not the whole brain so I think we are fine using them all
-                        LinearDiscriminantAnalysis(solver="svd",
-                                                   store_covariance=True)) # asking LDA to store covariance
+                        LinearModel(LogisticRegression(C=1,
+                                                       solver='liblinear'))) # asking LDA to store covariance
     time_decod = SlidingEstimator(clf, scoring='roc_auc')
         
     comb = []
@@ -258,14 +260,14 @@ for sub in np.arange(0  ,18):
 #           'wb') as outfile:
 #     pickle.dump(df_to_export,outfile)
     
-# df_to_export = pd.DataFrame(participant_scores)
-# with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1118_LDA_SemK_scores.P",
-#           'wb') as outfile:
-#     pickle.dump(df_to_export,outfile)
+df_to_export = pd.DataFrame(participant_scores)
+with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1126_LogReg_AVG_SemK_scores.P",
+          'wb') as outfile:
+    pickle.dump(df_to_export,outfile)
 
     
-with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1118_LDA_SemK_scores.P", 'rb') as f:
-     df_to_export = pickle.load(f)
+with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1126_LogReg_AVG_SemK_scores.P", 'rb') as f:
+      df = pickle.load(f)
 
 
 import seaborn as sns
@@ -279,12 +281,16 @@ for participant in df_to_export['ld']:
     avg_task = avg_each_combination.mean(axis=0)
     LD_mean.append(avg_task)
 
+LD_mean = np.array(LD_mean)
+
 MLK_mean = []
 
 for participant in df_to_export['mlk']:
     avg_each_combination = np.array(participant).mean(axis=1)
     avg_task = avg_each_combination.mean(axis=0)
     MLK_mean.append(avg_task)
+
+MLK_mean = np.array(MLK_mean)
 
 FRT_mean = []
 
@@ -293,6 +299,8 @@ for participant in df_to_export['frt']:
     avg_task = avg_each_combination.mean(axis=0)
     FRT_mean.append(avg_task)
 
+FRT_mean = np.array(FRT_mean)
+
 ODR_mean = []
 
 for participant in df_to_export['odr']:
@@ -300,14 +308,14 @@ for participant in df_to_export['odr']:
     avg_task = avg_each_combination.mean(axis=0)
     ODR_mean.append(avg_task)
 
+ODR_mean = np.array(ODR_mean)
+
 from scipy.stats import ttest_1samp
 from scipy import stats
 
 from mne.stats import permutation_cluster_1samp_test
    
 _ , LDpvalues = ttest_1samp(LD_mean, popmean=.5, axis=0)
-
-plt.axhline(x=LDpvalues[LDpvalues<.05],y=.48)
 
 
 # Reshape data to what is equivalent to (n_samples, n_space, n_time)
@@ -445,7 +453,7 @@ plt.show();
 SD_mean = np.mean(np.array([ MLK_mean, 
                              FRT_mean, 
                              ODR_mean ]),
-                  axis=0 )
+                  axis=0)
 
 SD_mean.shape = (18, 1, 300)
 

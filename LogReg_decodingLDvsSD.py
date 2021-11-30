@@ -48,22 +48,18 @@ def trials_no_category(row):
     
     return row
 
-def divide_semK(trials):
-    dic = {}
-    for semK in kk2:
-        dic[semK] = []
-        for trial in trials['trial'][trials['category']==semK].unique():
-            dic[semK].append(np.concatenate \
-                              (trials['data'] \
-                               [(trials['category']==semK) \
-                                & (trials['trial']==trial)].values)) 
-        dic[semK] = np.array(dic[semK])
-    return dic
 
+scores = {}
+scores['mlk'] = []
+scores['frt'] = []
+scores['odr'] = []
 
-participant_scores = []
+patterns = {}
+patterns['mlk'] = []
+patterns['frt'] = []
+patterns['odr'] = []
 
-for sub in np.arange(0  ,18):
+for sub in np.arange(0, 18):
     print(f"Analysing subject {sub}")
     # import the dataset containing 120 categories (6 ROIs * 4 tasks *5 categories)
     # each key contains an array with size (number of trials * number of vertices * time points)
@@ -166,86 +162,109 @@ for sub in np.arange(0  ,18):
     trials['frt'] = trials_frt
     trials['odr'] = trials_odr
     
-    trials_semK = {}
+    for tsk in trials.keys():
+        trials[tsk] = trials[tsk].apply(trials_no_category,axis=1)
     
-    for tsk in list(trials.keys()):
-        trials_semK[tsk] = divide_semK(trials[tsk])
+    trials_new = {}
+    
+    trials_new['ld'] = []
+    trials_new['mlk'] = []
+    trials_new['frt'] = []
+    trials_new['odr'] = []
+    
+
+    for tsk in trials_new.keys():
+        for i in trials[tsk]['trial'].unique():
+            trials_new[tsk].append(np.vstack(np.array(trials[tsk][trials[tsk]['trial']==i]['data'])))
+        trials_new[tsk] = np.array(trials_new[tsk])
+    
+    # now let's average 3 trials together
+
+    trials_avg3 = dict.fromkeys(trials_new.keys())
+    
+    for k in trials_new.keys():
         
-    # try not averaging because not enough trials otherwise
+        while len(trials_new[k])%3 != 0:
+            trials_new[k] = np.delete(trials_new[k], len(trials_new[k])-1, 0)
+    # create random groups of trials
+        new_tsk = np.split(trials_new[k],len(trials_new[k])/3)
+        new_trials = []
+    # calculate average for each timepoint of the 3 trials
+        for nt in new_tsk:
+            new_trials.append(np.mean(np.array(nt),0))
+        # assign group it in the corresponding task
+        
+        trials_avg3[k] = np.array(new_trials)
+
+    vertices = []
     
-    # # now let's average 4 trials together
-    # sub_lds = {}
-    # sub_frts = {}
-    # sub_mlks = {}
-    # sub_odrs = {}
+    for roi in trials_mlk[trials['mlk']['trial']==0]['data']:
+        vertices.append(roi.shape[0])
     
-    # for dic in [sub_lds, sub_frts, sub_mlks, sub_odrs]:
-    #     for semK in kk2:
-    #         dic[semK] = []
+    print([v for v in vertices])
     
-    # for i, tsk in enumerate(trials_semK.values()):
-     
-    #     # make sure the number of trials is a multiple of 4, or eliminate excess
-    #     for k in tsk.keys():
-            
-    #         while len(tsk[k])%4 != 0:
-    #             tsk[k] = np.delete(tsk[k], len(tsk[k])-1, 0)
-    #     # create random groups of trials
-    #         new_tsk = np.split(tsk[k],len(tsk[k])/4)
-    #         new_trials = []
-    #     # calculate average for each timepoint of the 4 trials
-    #         for nt in new_tsk:
-    #             new_trials.append(np.mean(nt,0))
-    #         # assign group it in the corresponding task
-            
-    #         if i==0:
-    #             sub_lds[k] = new_trials
-    #         elif i==1:
-    #             sub_mlks[k] = new_trials
-    #         elif i==2:
-    #             sub_frts[k] = new_trials
-    #         elif i==3:
-    #             sub_odrs[k] = new_trials
-            
-    # subt = {}
-    # subt['ld'] = sub_lds
-    # subt['mlk'] = sub_mlks
-    # subt['frt'] = sub_frts
-    # subt['odr'] = sub_odrs
+    ROI_vertices = []
+    
+    for i in range(len(vertices)):
+        ROI_vertices.extend([kkROI[i]]*vertices[i])
+    
     
     # We create and run the model. We expect the model to perform at chance before the presentation of the stimuli (no ROI should be sensitive to task/semantics demands before the presentation of a word).
     
     # prepare a series of classifier applied at each time sample
     clf = make_pipeline(StandardScaler(),  # z-score normalization
                         SelectKBest(f_classif, k='all'),  # it's not the whole brain so I think we are fine using them all
-                        LinearDiscriminantAnalysis(solver="svd",
-                                                   store_covariance=True)) # asking LDA to store covariance
+                        LinearModel(LogisticRegression(C=1,
+                                                       solver='liblinear'))) # asking LDA to store covariance
     time_decod = SlidingEstimator(clf, scoring='roc_auc')
-        
-    comb = []
-    
-    for i in combinations(kk2,2):
-        comb.append(i)
-    
-    scores = {}
-    scores['ld'] = []
-    scores['mlk'] = []
-    scores['frt'] = []
-    scores['odr'] = []
     
     # just use subt instead of trials_semK if you want to have average of trials
-    for task in trials_semK.keys():
-        for semKvsemK in comb:
-            X = np.concatenate([trials_semK[task][semKvsemK[0]],
-                                    trials_semK[task][semKvsemK[1]]])
+    
+   
+    for task in scores.keys():
+        X = np.concatenate([trials_avg3['ld'],trials_avg3[task]])
+        
+        y = np.array(['ld']*len(trials_avg3['ld']) + \
+                         [task]*len(trials_avg3[task]))
+        
+        X, y = shuffle(X, y, random_state=0)
+        
+        scores[task].append(cross_val_multiscore(time_decod,
+                                                 X, y, cv=5))
+        
+        time_decod.fit(X, y)
+        pattern = get_coef(time_decod, 'patterns_', inverse_transform=True)
+        pattern = pd.DataFrame(pattern, index=ROI_vertices)
+        patterns[task].append(pattern)
+        
+
+
+df_to_export = pd.DataFrame(patterns)
+with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1129_LogReg_LDvsSD_patterns.P",
+          'wb') as outfile:
+    pickle.dump(df_to_export,outfile)
+    
+df_to_export = pd.DataFrame(scores)
+with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1129_LogReg_LDvsSD_scores.P",
+          'wb') as outfile:
+    pickle.dump(df_to_export,outfile)
+
+with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1129_LogReg_LDvsSD_patterns.P", 'rb') as f:
+      pp = pickle.load(f)
+      
+with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1129_LogReg_LDvsSD_scores.P", 'rb') as f:
+      ss = pickle.load(f)
+
+    df = pd.DataFrame(zip(ROI_vertices, scores),columns=['ROI','milk', 'fruit', 'odour'])
+
             
-            y = np.array([semKvsemK[0]]*len(trials_semK[task][semKvsemK[0]]) + \
-                             [semKvsemK[1]]*len(trials_semK[task][semKvsemK[1]]))
+            avg = []
+            for i in range(len(df)):
+                avg.append(np.mean([df['milk'][i],df['fruit'][i],df['odour'][i]],0))
+            df['avg'] = avg
+
             
-            X, y = shuffle(X, y, random_state=0)
-            
-            scores[task].append(cross_val_multiscore(time_decod,
-                                                     X, y, cv=5))
+            SDLD_coefficients.append(df)
             
     participant_scores.append(scores)
     
@@ -258,14 +277,14 @@ for sub in np.arange(0  ,18):
 #           'wb') as outfile:
 #     pickle.dump(df_to_export,outfile)
     
-# df_to_export = pd.DataFrame(participant_scores)
-# with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1118_LDA_SemK_scores.P",
-#           'wb') as outfile:
-#     pickle.dump(df_to_export,outfile)
+df_to_export = pd.DataFrame(participant_scores)
+with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1126_LogReg_AVG_SemK_scores.P",
+          'wb') as outfile:
+    pickle.dump(df_to_export,outfile)
 
     
-with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1118_LDA_SemK_scores.P", 'rb') as f:
-     df_to_export = pickle.load(f)
+with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1126_LogReg_AVG_SemK_scores.P", 'rb') as f:
+      df = pickle.load(f)
 
 
 import seaborn as sns
@@ -279,12 +298,16 @@ for participant in df_to_export['ld']:
     avg_task = avg_each_combination.mean(axis=0)
     LD_mean.append(avg_task)
 
+LD_mean = np.array(LD_mean)
+
 MLK_mean = []
 
 for participant in df_to_export['mlk']:
     avg_each_combination = np.array(participant).mean(axis=1)
     avg_task = avg_each_combination.mean(axis=0)
     MLK_mean.append(avg_task)
+
+MLK_mean = np.array(MLK_mean)
 
 FRT_mean = []
 
@@ -293,6 +316,8 @@ for participant in df_to_export['frt']:
     avg_task = avg_each_combination.mean(axis=0)
     FRT_mean.append(avg_task)
 
+FRT_mean = np.array(FRT_mean)
+
 ODR_mean = []
 
 for participant in df_to_export['odr']:
@@ -300,14 +325,14 @@ for participant in df_to_export['odr']:
     avg_task = avg_each_combination.mean(axis=0)
     ODR_mean.append(avg_task)
 
+ODR_mean = np.array(ODR_mean)
+
 from scipy.stats import ttest_1samp
 from scipy import stats
 
 from mne.stats import permutation_cluster_1samp_test
    
 _ , LDpvalues = ttest_1samp(LD_mean, popmean=.5, axis=0)
-
-plt.axhline(x=LDpvalues[LDpvalues<.05],y=.48)
 
 
 # Reshape data to what is equivalent to (n_samples, n_space, n_time)
@@ -445,7 +470,7 @@ plt.show();
 SD_mean = np.mean(np.array([ MLK_mean, 
                              FRT_mean, 
                              ODR_mean ]),
-                  axis=0 )
+                  axis=0)
 
 SD_mean.shape = (18, 1, 300)
 

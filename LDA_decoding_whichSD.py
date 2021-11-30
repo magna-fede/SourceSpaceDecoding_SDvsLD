@@ -68,15 +68,15 @@ SDvsSD_scores = []
 SDvsSD_coefficients = []
 cat_scores = []
 
-for sub in np.arange(0  ,18):
+for sub in np.arange(0, 18):
     print(f'Analysing participant number: {sub}')
     # import the dataset containing 120 categories (6 ROIs * 4 tasks *5 categories)
     # each key contains an array with size (number of trials * number of vertices * time points)
-    # with open(f'//cbsu/data/Imaging/hauk/users/fm02/dataSDLD/activities_sub_{sub}.json', 'rb') as f:
-    #     output = pickle.load(f)
-
-    with open(f'//imaging/hauk/users/fm02/dataSDLD/activities_sub_{sub}.json', 'rb') as f:
+    with open(f'//cbsu/data/Imaging/hauk/users/fm02/dataSDLD/activities_sub_{sub}.json', 'rb') as f:
         output = pickle.load(f)
+
+    # with open(f'//imaging/hauk/users/fm02/dataSDLD/activities_sub_{sub}.json', 'rb') as f:
+    #     output = pickle.load(f)
     
     kk = list(output.keys())
     
@@ -311,30 +311,12 @@ for sub in np.arange(0  ,18):
     
     SDvsSD_coefficients.append(df)
     
-# df_to_export = pd.DataFrame(SDvsSD_scores)
-# with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1005_SDvsSD_avg_scores.P", 'wb') as outfile:
-#     pickle.dump(df_to_export,outfile)
-# df_to_export = pd.DataFrame(SDvsSD_coefficients)
-# with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1005_SDvsSD_coefficients.P", 'wb') as outfile:
-#     pickle.dump(df_to_export,outfile)
-
-# create ranks object
-
-mlkfrt_ranks = pd.DataFrame(index=kkROI,
-                            columns=np.arange(-300,900,4).astype(str))
-
-for i in range(300):
-    coefscores = pd.DataFrame(zip(ROI_vertices,
-                              SelectKBest(k='all').fit(X_mlkfrt[:,:,i],
-                                                       y_mlkfrt).scores_))
-    coefscores = coefscores.sort_values(by=1, ascending=True).reset_index()
-    coefscores = coefscores.tail(58)
-
-    coef_rank = pd.Series(index=kkROI)
-
-    for roi in kkROI:
-        coef_rank[roi] = coefscores[coefscores[0]==roi].index.values.sum()
-    coef_rank = coef_rank.sort_values(ascending=False)
-    coef_rank_app = pd.Series(np.arange(1,7), index=coef_rank.index.values )
+df_to_export = pd.Series(SDvsSD_scores)
+with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/LDA/whichSD/1123_SDvsSD_scores.P", 'wb') as outfile:
+    pickle.dump(df_to_export,outfile)
     
-    mlkfrt_ranks[str(-300+4*i)] = coef_rank_app
+df_to_export = pd.Series(SDvsSD_coefficients)
+with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/LDA/whichSD/1123_SDvsSD_coefficients.P", 'wb') as outfile:
+    pickle.dump(df_to_export,outfile)
+
+

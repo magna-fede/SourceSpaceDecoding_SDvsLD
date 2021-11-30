@@ -398,12 +398,12 @@ for sub in np.arange(0  ,18):
 
 
 df_to_export = pd.Series(SDLD_scores)
-with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1123_LDA_SDLD_scores.P",
+with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/LDA/LDvsSD/1123_LDA_SDLD_scores.P",
           'wb') as outfile:
     pickle.dump(df_to_export,outfile)
     
 df_to_export = pd.Series(SDLD_coefficients)
-with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1123_LDA_SDLD_coefficients.P",
+with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/LDA/LDvsSD/1123_LDA_SDLD_coefficients.P",
           'wb') as outfile:
     pickle.dump(df_to_export,outfile)
   

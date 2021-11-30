@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 # -*- coding: utf-8 -*-
 """
 Created on Thu Sep 16 15:54:00 2021
@@ -12,6 +12,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+from scipy.stats import sem
 
 # load scores result from previous script
 
@@ -54,8 +55,8 @@ for roi in kkROI:
     # please note that np.mean(np.vstack(participants_mlk[roi]),0) 
     # is equal to np.mean(participants_mlk[roi],0)
     plt.fill_between(x=np.arange(-300,900,4), \
-                 y1=(np.mean(np.array(participants_mlk[roi]),0)-np.std(np.array(participants_mlk[roi]),0)), \
-                 y2=(np.mean(np.array(participants_mlk[roi]),0)+np.std(np.array(participants_mlk[roi]),0)), \
+                 y1=(np.mean(np.array(participants_mlk[roi]),0)-sem(np.vstack(np.array(participants_mlk[roi])),0)), \
+                 y2=(np.mean(np.array(participants_mlk[roi]),0)+sem(np.vstack(np.array(participants_mlk[roi])),0)), \
                  color='b', alpha=.1)
     avg_all[roi] = np.mean(participants_mlk[roi],0)
     plt.axvline(0, color='k');
@@ -72,6 +73,7 @@ plt.axvline(200, color='k', linewidth=1, alpha=0.3);
 plt.axhline(.5, color='k', linestyle='--', label='chance');
 plt.title('Decoding MILKvsLD accuracy of each ROI separately')
 plt.legend(kkROI);
+plt.savefig('MILKvsLD.png', format='png');
 plt.show();
 
 avg_all = pd.DataFrame(index=range(300),columns=kkROI)
@@ -81,8 +83,8 @@ for roi in kkROI:
     # please note that np.mean(np.vstack(participants_frt[roi]),0) 
     # is equal to np.mean(participants_frt[roi],0)
     plt.fill_between(x=np.arange(-300,900,4), \
-                 y1=(np.mean(np.array(participants_frt[roi]),0)-np.std(np.array(participants_frt[roi]),0)), \
-                 y2=(np.mean(np.array(participants_frt[roi]),0)+np.std(np.array(participants_frt[roi]),0)), \
+                 y1=(np.mean(np.array(participants_frt[roi]),0)-sem(np.vstack(np.array(participants_frt[roi])),0)), \
+                 y2=(np.mean(np.array(participants_frt[roi]),0)+sem(np.vstack(np.array(participants_frt[roi])),0)), \
                  color='b', alpha=.1)
     avg_all[roi] = np.mean(participants_frt[roi],0)
     plt.axvline(0, color='k');
@@ -99,6 +101,7 @@ plt.axvline(200, color='k', linewidth=1, alpha=0.3);
 plt.axhline(.5, color='k', linestyle='--', label='chance');
 plt.title('Decoding FRUITvsLD accuracy of each ROI separately')
 plt.legend(kkROI);
+plt.savefig('FRUITvsLD.png', format='png');
 plt.show();
 
 avg_all = pd.DataFrame(index=range(300),columns=kkROI)
@@ -108,8 +111,8 @@ for roi in kkROI:
     # please note that np.mean(np.vstack(participants_odr[roi]),0) 
     # is equal to np.mean(participants_odr[roi],0)
     plt.fill_between(x=np.arange(-300,900,4), \
-                 y1=(np.mean(np.array(participants_odr[roi]),0)-np.std(np.array(participants_odr[roi]),0)), \
-                 y2=(np.mean(np.array(participants_odr[roi]),0)+np.std(np.array(participants_odr[roi]),0)), \
+                 y1=(np.mean(np.array(participants_odr[roi]),0)-sem(np.vstack(np.array(participants_odr[roi])),0)), \
+                 y2=(np.mean(np.array(participants_odr[roi]),0)+sem(np.vstack(np.array(participants_odr[roi])),0)), \
                  color='b', alpha=.1)
     avg_all[roi] = np.mean(participants_odr[roi],0)
     plt.axvline(0, color='k');
@@ -126,6 +129,7 @@ plt.axvline(200, color='k', linewidth=1, alpha=0.3);
 plt.axhline(.5, color='k', linestyle='--', label='chance');
 plt.title('Decoding ODOURvsLD accuracy of each ROI separately')
 plt.legend(kkROI);
+plt.savefig('ODOURvsLD.png', format='png');
 plt.show();
 
 avg_all = pd.DataFrame(index=range(300),columns=kkROI)
@@ -135,13 +139,14 @@ for roi in kkROI:
     # please note that np.mean(np.vstack(participants_mlk[roi]),0) 
     # is equal to np.mean(participants_mlk[roi],0)
     plt.fill_between(x=np.arange(-300,900,4), \
-                 y1=(np.mean(np.array(avg_scores[roi]),0)-np.std(np.array(avg_scores[roi]),0)), \
-                 y2=(np.mean(np.array(avg_scores[roi]),0)+np.std(np.array(avg_scores[roi]),0)), \
+                 y1=(np.mean(np.array(avg_scores[roi]),0)-sem(np.vstack(np.array(avg_scores[roi])),0)), \
+                 y2=(np.mean(np.array(avg_scores[roi]),0)+sem(np.vstack(np.array(avg_scores[roi])),0)), \
                  color='b', alpha=.1)
     avg_all[roi] = np.mean(avg_scores[roi],0)
     plt.axvline(0, color='k');
     plt.axhline(.5, color='k', linestyle='--', label='chance');
     plt.title(roi)
+    plt.savefig(f'AVG_SDvsLD-{roi}.png', format='png');
     plt.show();
 fig, ax = plt.subplots(1);
 ax.plot(np.arange(-300,900,4),avg_all);
@@ -153,4 +158,5 @@ plt.axvline(200, color='k', linewidth=1, alpha=0.3);
 plt.axhline(.5, color='k', linestyle='--', label='chance');
 plt.title('Decoding AVG(SD)vsLD accuracy of each ROI separately')
 plt.legend(kkROI);
+plt.savefig('AVG_SDvsLD.png', format='png');
 plt.show()
