@@ -48,6 +48,18 @@ def trials_no_category(row):
     
     return row
 
+def rms(example):
+    """Compute root mean square of each ROI.
+    Input is a dataframe of length=n_vertices."""
+    # first transform Series in np array of dimension n_vertics*timepoints
+    example = np.vstack(np.array(example))
+    # create np.array where to store info
+    rms_example = np.zeros(example.shape[1])
+    # loop over timepoints
+    for i in np.arange(0,example.shape[1]):
+        rms_example[i] = np.sqrt(np.mean(example[:,i]**2))
+    
+    return rms_example 
 
 scores = {}
 scores['mlk'] = []
@@ -230,277 +242,113 @@ for sub in np.arange(0, 18):
         X, y = shuffle(X, y, random_state=0)
         
         scores[task].append(cross_val_multiscore(time_decod,
-                                                 X, y, cv=5))
+                                                 X, y, cv=5).mean(axis=0))
         
         time_decod.fit(X, y)
         pattern = get_coef(time_decod, 'patterns_', inverse_transform=True)
         pattern = pd.DataFrame(pattern, index=ROI_vertices)
         patterns[task].append(pattern)
         
-
+# np.array(patterns['frt'][0].loc['lATL']).mean(axis=0)
 
 df_to_export = pd.DataFrame(patterns)
-with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1129_LogReg_LDvsSD_patterns.P",
+with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1130_LogReg_LDvsSD_patterns.P",
           'wb') as outfile:
     pickle.dump(df_to_export,outfile)
     
 df_to_export = pd.DataFrame(scores)
-with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1129_LogReg_LDvsSD_scores.P",
+with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1130_LogReg_LDvsSD_scores.P",
           'wb') as outfile:
     pickle.dump(df_to_export,outfile)
 
-with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1129_LogReg_LDvsSD_patterns.P", 'rb') as f:
-      pp = pickle.load(f)
+with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1130_LogReg_LDvsSD_patterns.P", 'rb') as f:
+      patterns = pickle.load(f)
       
-with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1129_LogReg_LDvsSD_scores.P", 'rb') as f:
-      ss = pickle.load(f)
+with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1130_LogReg_LDvsSD_scores.P", 'rb') as f:
+      scores = pickle.load(f)
 
-    df = pd.DataFrame(zip(ROI_vertices, scores),columns=['ROI','milk', 'fruit', 'odour'])
-
-            
-            avg = []
-            for i in range(len(df)):
-                avg.append(np.mean([df['milk'][i],df['fruit'][i],df['odour'][i]],0))
-            df['avg'] = avg
-
-            
-            SDLD_coefficients.append(df)
-            
-    participant_scores.append(scores)
-    
-    
-
-
-
-# df_to_export = pd.DataFrame(SDLD_scores)
-# with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1104_LDA_SDLD_scores.P",
-#           'wb') as outfile:
-#     pickle.dump(df_to_export,outfile)
-    
-df_to_export = pd.DataFrame(participant_scores)
-with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1126_LogReg_AVG_SemK_scores.P",
-          'wb') as outfile:
-    pickle.dump(df_to_export,outfile)
-
-    
-with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1126_LogReg_AVG_SemK_scores.P", 'rb') as f:
-      df = pickle.load(f)
 
 
 import seaborn as sns
 import matplotlib.pyplot as plt
 from scipy.stats import sem
 
-LD_mean = []
-
-for participant in df_to_export['ld']:
-    avg_each_combination = np.array(participant).mean(axis=1)
-    avg_task = avg_each_combination.mean(axis=0)
-    LD_mean.append(avg_task)
-
-LD_mean = np.array(LD_mean)
-
-MLK_mean = []
-
-for participant in df_to_export['mlk']:
-    avg_each_combination = np.array(participant).mean(axis=1)
-    avg_task = avg_each_combination.mean(axis=0)
-    MLK_mean.append(avg_task)
-
-MLK_mean = np.array(MLK_mean)
-
-FRT_mean = []
-
-for participant in df_to_export['frt']:
-    avg_each_combination = np.array(participant).mean(axis=1)
-    avg_task = avg_each_combination.mean(axis=0)
-    FRT_mean.append(avg_task)
-
-FRT_mean = np.array(FRT_mean)
-
-ODR_mean = []
-
-for participant in df_to_export['odr']:
-    avg_each_combination = np.array(participant).mean(axis=1)
-    avg_task = avg_each_combination.mean(axis=0)
-    ODR_mean.append(avg_task)
-
-ODR_mean = np.array(ODR_mean)
-
-from scipy.stats import ttest_1samp
-from scipy import stats
-
-from mne.stats import permutation_cluster_1samp_test
-   
-_ , LDpvalues = ttest_1samp(LD_mean, popmean=.5, axis=0)
-
-
-# Reshape data to what is equivalent to (n_samples, n_space, n_time)
-LD_mean.shape = (18, 1, 300)
-# Compute threshold from t distribution (this is also the default)
-threshold = stats.distributions.t.ppf(1 - 0.05, 18 - 1)
-Lt_clust, Lclusters, Lp_values, H0 = permutation_cluster_1samp_test(
-    LD_mean-.5, n_jobs=1, threshold=threshold, adjacency=None,
-    n_permutations='all')
-# Put the cluster data in a viewable format
-Lp_clust = np.ones((1,300))
-for cl, p in zip(Lclusters, Lp_values):
-    Lp_clust[cl] = p
-
-MLK_mean.shape = (18, 1, 300)
-# Compute threshold from t distribution (this is also the default)
-threshold = stats.distributions.t.ppf(1 - 0.05, 18 - 1)
-Mt_clust, Mclusters, Mp_values, MH0 = permutation_cluster_1samp_test(
-    MLK_mean-.5, n_jobs=1, threshold=threshold, adjacency=None,
-    n_permutations='all')
-# Put the cluster data in a viewable format
-Mp_clust = np.ones((1,300))
-for cl, p in zip(Mclusters, Mp_values):
-    Mp_clust[cl] = p
-
-
-FRT_mean.shape = (18, 1, 300)
-# Compute threshold from t distribution (this is also the default)
-threshold = stats.distributions.t.ppf(1 - 0.05, 18 - 1)
-Ft_clust, Fclusters, Fp_values, FH0 = permutation_cluster_1samp_test(
-    FRT_mean-.5, n_jobs=1, threshold=threshold, adjacency=None,
-    n_permutations='all')
-# Put the cluster data in a viewable format
-Fp_clust = np.ones((1,300))
-for cl, p in zip(Fclusters, Fp_values):
-    Fp_clust[cl] = p
-
-ODR_mean.shape = (18, 1, 300)
-# Compute threshold from t distribution (this is also the default)
-threshold = stats.distributions.t.ppf(1 - 0.05, 18 - 1)
-Ot_clust, Oclusters, Op_values, OH0 = permutation_cluster_1samp_test(
-    ODR_mean-.5, n_jobs=1, threshold=threshold, adjacency=None,
-    n_permutations='all')
-# Put the cluster data in a viewable format
-Op_clust = np.ones((1,300))
-for cl, p in zip(Oclusters, Op_values):
-    Op_clust[cl] = p
-
 times = np.arange(-300,900,4)
 
-print(f'MILK TASK : Decoding semantic category at timepoints: \
-      {times[np.where(Mp_clust < 0.05)[1]]}')
-print(f'FRUIT TASK : Decoding semantic category at timepoints: \
-      {times[np.where(Fp_clust < 0.05)[1]]}')
-print(f'ODOUR TASK : Decoding semantic category at timepoints: \
-      {times[np.where(Op_clust < 0.05)[1]]}')
-print(f'LEXICAL DECISION: Decoding semantic category at timepoints: \
-      {times[np.where(Lp_clust < 0.05)[1]]}')
+scores['avg'] = []
 
-
-LD_mean = np.array(LD_mean).reshape((18,300))
-MLK_mean = np.array(MLK_mean).reshape((18,300))
-FRT_mean = np.array(FRT_mean).reshape((18,300))
-ODR_mean = np.array(ODR_mean).reshape((18,300))
-
-sns.lineplot(x=times, y=np.mean(LD_mean,0))
-plt.fill_between(x=times, \
-                 y1=(np.mean(LD_mean,0)-sem(LD_mean,0)), \
-                 y2=(np.mean(LD_mean,0)+sem(LD_mean,0)), \
-                 color='b', alpha=.1)
-plt.axvline(0, color='k');
-plt.axvline(50, color='k', linewidth=1, alpha=0.3);
-plt.axvline(100, color='k',linewidth=1, alpha=0.3);
-plt.axvline(150, color='k', linewidth=1, alpha=0.3);
-plt.axvline(200, color='k', linewidth=1, alpha=0.3);
-plt.title('LD Semantic Category Decoding')
-plt.axhline(.5, color='k', linestyle='--', label='chance');
-# plt.legend();
-plt.show();
-
-
-sns.lineplot(x=times, y=np.mean(MLK_mean,0))
-plt.fill_between(x=times, \
-                 y1=(np.mean(MLK_mean,0)-sem(MLK_mean,0)), \
-                 y2=(np.mean(MLK_mean,0)+sem(MLK_mean,0)), \
-                 color='b', alpha=.1)
-plt.axvline(0, color='k');
-plt.axvline(50, color='k', linewidth=1, alpha=0.3);
-plt.axvline(100, color='k',linewidth=1, alpha=0.3);
-plt.axvline(150, color='k', linewidth=1, alpha=0.3);
-plt.axvline(200, color='k', linewidth=1, alpha=0.3);
-plt.axhline(.5, color='k', linestyle='--', label='chance');
-plt.axvspan(times[np.where(Mp_clust < 0.05)[1]][0],
-            times[np.where(Mp_clust < 0.05)[1]][-1], 
-           label="Cluster based permutation p<.05",
-           color="green", alpha=0.3)
-plt.title('MILK Semantic Category Decoding');
-# plt.legend();
-plt.show();
- 
-sns.lineplot(x=times, y=np.mean(FRT_mean,0))
-plt.fill_between(x=times, \
-                 y1=(np.mean(FRT_mean,0)-sem(FRT_mean,0)), \
-                 y2=(np.mean(FRT_mean,0)+sem(FRT_mean,0)), \
-                 color='b', alpha=.1)
-plt.axvline(0, color='k');
-plt.axvline(50, color='k', linewidth=1, alpha=0.3);
-plt.axvline(100, color='k',linewidth=1, alpha=0.3);
-plt.axvline(150, color='k', linewidth=1, alpha=0.3);
-plt.axvline(200, color='k', linewidth=1, alpha=0.3);
-plt.axhline(.5, color='k', linestyle='--', label='chance');
-plt.axvspan(times[np.where(Fp_clust < 0.05)[1]][0],
-            times[np.where(Fp_clust < 0.05)[1]][-1], 
-           label="Cluster based permutation p<.05",
-           color="green", alpha=0.3)
-plt.title('FRUIT Semantic Category Decoding');
-# plt.legend();
-plt.show();
-
-sns.lineplot(x=times, y=np.mean(ODR_mean,0))
-plt.fill_between(x=times, \
-                 y1=(np.mean(ODR_mean,0)-sem(ODR_mean,0)), \
-                 y2=(np.mean(ODR_mean,0)+sem(ODR_mean,0)), \
-                 color='b', alpha=.1)
-plt.axvline(0, color='k');
-plt.axvline(50, color='k', linewidth=1, alpha=0.3);
-plt.axvline(100, color='k',linewidth=1, alpha=0.3);
-plt.axvline(150, color='k', linewidth=1, alpha=0.3);
-plt.axvline(200, color='k', linewidth=1, alpha=0.3);
-plt.axhline(.5, color='k', linestyle='--', label='chance');
-plt.title('ODOUR Semantic Category Decoding'); 
-# plt.legend();
-plt.show();
-
-SD_mean = np.mean(np.array([ MLK_mean, 
-                             FRT_mean, 
-                             ODR_mean ]),
-                  axis=0)
-
-SD_mean.shape = (18, 1, 300)
-
-# Compute threshold from t distribution (this is also the default)
-threshold = stats.distributions.t.ppf(1 - 0.05, 18 - 1)
-SDt_clust, SDclusters, SDp_values, SDH0 = permutation_cluster_1samp_test(
-    SD_mean-.5, n_jobs=1, threshold=threshold, adjacency=None,
-    n_permutations='all')
-# Put the cluster data in a viewable format
-SDp_clust = np.ones((1,300))
-for cl, p in zip(SDclusters, SDp_values):
-    SDp_clust[cl] = p
-
-SD_mean = np.array(SD_mean).reshape((18,300))
+for i in range(len(scores['frt'])):
+    scores['avg'].append(np.array([scores['mlk'][i],
+                                 scores['frt'][i],
+                                 scores['odr'][i]]).mean(axis=0))
     
-sns.lineplot(x=times, y=np.mean(SD_mean, 0))
+sns.lineplot(x=times, y=np.array(scores['avg']).mean(axis=0))
 plt.fill_between(x=times, \
-                 y1=(np.mean(SD_mean,0)-sem(SD_mean,0)), \
-                 y2=(np.mean(SD_mean,0)+sem(SD_mean,0)), \
+                 y1=(np.mean(np.array(scores['avg']),0)-sem(np.array(scores['avg']),0)), \
+                 y2=(np.mean(np.array(scores['avg']),0)+sem(np.array(scores['avg']),0)), \
                  color='b', alpha=.1)
 plt.axvline(0, color='k');
 plt.axvline(50, color='k', linewidth=1, alpha=0.3);
 plt.axvline(100, color='k',linewidth=1, alpha=0.3);
 plt.axvline(150, color='k', linewidth=1, alpha=0.3);
 plt.axvline(200, color='k', linewidth=1, alpha=0.3);
+plt.title('LD vs average(SD) Semantic Category Decoding')
 plt.axhline(.5, color='k', linestyle='--', label='chance');
-plt.axvspan(times[np.where(SDp_clust < 0.05)[1]][0],
-            times[np.where(SDp_clust < 0.05)[1]][-1], 
-           label="Cluster based permutation p<.05",
-           color="green", alpha=0.3)
-plt.title('SD_avg Semantic Category Decoding'); 
 # plt.legend();
+plt.show();
+
+for task in (['frt', 'mlk', 'odr']):
+    sns.lineplot(x=times, y=np.array(scores[task]).mean(axis=0))
+    # plt.fill_between(x=times, \
+    #                  y1=(np.mean(np.array(scores[task]),0) - \
+    #                      sem(np.array(scores[task]),0)), \
+    #                  y2=(np.mean(np.array(scores[task]),0) + \
+    #                      sem(np.array(scores[task]),0)), \
+    #                  color='b', alpha=.1)
+
+plt.axvline(0, color='k');
+plt.axvline(50, color='k', linewidth=1, alpha=0.3);
+plt.axvline(100, color='k',linewidth=1, alpha=0.3);
+plt.axvline(150, color='k', linewidth=1, alpha=0.3);
+plt.axvline(200, color='k', linewidth=1, alpha=0.3);
+plt.title('LD vs SD Semantic Category Decoding')
+plt.axhline(.5, color='k', linestyle='--', label='chance');
+plt.legend(['frt', 'mlk', 'odr']);
+plt.show();
+
+patterns_roi = dict.fromkeys(kkROI)
+
+for roi in patterns_roi.keys():
+    patterns_roi[roi] = dict.fromkeys(['frt', 'mlk', 'odr'])
+    for task in patterns_roi[roi].keys():
+        patterns_roi[roi][task] = []
+    
+for i in range(18):
+    for roi in patterns_roi.keys():
+        for task in patterns_roi[roi].keys():
+            patterns_roi[roi][task].append(rms(np.array(patterns[task][i].loc[roi])))
+
+for roi in patterns_roi.keys():
+    patterns_roi[roi]['avg'] = []
+    
+for i in range(18):
+    for roi in patterns_roi.keys():
+        patterns_roi[roi]['avg'].append(np.array([patterns_roi[roi]['mlk'][i],
+                                 patterns_roi[roi]['frt'][i],
+                                 patterns_roi[roi]['odr'][i]]).mean(axis=0))    
+    
+for roi in patterns_roi.keys():
+    sns.lineplot(x=times, y=np.array(patterns_roi[roi]['avg']).mean(axis=0))
+# plt.fill_between(x=times, \
+#                  y1=(np.mean(np.array(scores['avg']),0)-sem(np.array(scores['avg']),0)), \
+#                  y2=(np.mean(np.array(scores['avg']),0)+sem(np.array(scores['avg']),0)), \
+#                  color='b', alpha=.1)
+plt.axvline(0, color='k');
+plt.axvline(50, color='k', linewidth=1, alpha=0.3);
+plt.axvline(100, color='k',linewidth=1, alpha=0.3);
+plt.axvline(150, color='k', linewidth=1, alpha=0.3);
+plt.axvline(200, color='k', linewidth=1, alpha=0.3);
+plt.title('LD vs average(SD) RMS patterns')
+
+plt.legend(patterns_roi.keys());
 plt.show();
