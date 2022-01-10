@@ -275,17 +275,17 @@ from scipy.stats import sem
 
 times = np.arange(-300,900,4)
 
-scores['avg'] = []
+scores['avg'] = [ [] for _ in range(len(scores)) ]
 
 for i in range(len(scores['frt'])):
-    scores['avg'].append(np.array([scores['mlk'][i],
+    scores['avg'][i] = np.array([scores['mlk'][i],
                                  scores['frt'][i],
-                                 scores['odr'][i]]).mean(axis=0))
+                                 scores['odr'][i]]).mean(axis=0)
     
 sns.lineplot(x=times, y=np.array(scores['avg']).mean(axis=0))
 plt.fill_between(x=times, \
-                 y1=(np.mean(np.array(scores['avg']),0)-sem(np.array(scores['avg']),0)), \
-                 y2=(np.mean(np.array(scores['avg']),0)+sem(np.array(scores['avg']),0)), \
+                 y1=(np.mean(np.array(scores['avg']),0)-sem(np.vstack(scores['avg']),0)), \
+                 y2=(np.mean(np.array(scores['avg']),0)+sem(np.vstack(scores['avg']),0)), \
                  color='b', alpha=.1)
 plt.axvline(0, color='k');
 plt.axvline(50, color='k', linewidth=1, alpha=0.3);
