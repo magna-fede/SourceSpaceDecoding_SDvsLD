@@ -265,9 +265,10 @@ with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1126_LogReg_AVG_SemK
           'wb') as outfile:
     pickle.dump(df_to_export,outfile)
 
+##########################################################
     
 with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1126_LogReg_AVG_SemK_scores.P", 'rb') as f:
-      df = pickle.load(f)
+     df_to_export = pickle.load(f)
 
 
 import seaborn as sns
@@ -393,6 +394,13 @@ plt.axvline(150, color='k', linewidth=1, alpha=0.3);
 plt.axvline(200, color='k', linewidth=1, alpha=0.3);
 plt.title('LD Semantic Category Decoding')
 plt.axhline(.5, color='k', linestyle='--', label='chance');
+mask = Lp_clust.reshape(300) < 0.05
+first_vals = np.argwhere((~mask[:-1] & mask[1:]))  # Look for False-True transitions
+last_vals = np.argwhere((mask[:-1] & ~mask[1:])) + 1  # Look for True-False transitions
+for start, stop in zip(first_vals, last_vals):
+    plt.axvspan(times[start], times[stop], alpha=0.3,
+               label="Cluster based permutation p<.05",
+               color="green")
 # plt.legend();
 plt.show();
 
@@ -408,10 +416,13 @@ plt.axvline(100, color='k',linewidth=1, alpha=0.3);
 plt.axvline(150, color='k', linewidth=1, alpha=0.3);
 plt.axvline(200, color='k', linewidth=1, alpha=0.3);
 plt.axhline(.5, color='k', linestyle='--', label='chance');
-plt.axvspan(times[np.where(Mp_clust < 0.05)[1]][0],
-            times[np.where(Mp_clust < 0.05)[1]][-1], 
-           label="Cluster based permutation p<.05",
-           color="green", alpha=0.3)
+mask = Mp_clust.reshape(300) < 0.05
+first_vals = np.argwhere((~mask[:-1] & mask[1:]))  # Look for False-True transitions
+last_vals = np.argwhere((mask[:-1] & ~mask[1:])) + 1  # Look for True-False transitions
+for start, stop in zip(first_vals, last_vals):
+    plt.axvspan(times[start], times[stop], alpha=0.3,
+               label="Cluster based permutation p<.05",
+               color="green")
 plt.title('MILK Semantic Category Decoding');
 # plt.legend();
 plt.show();
@@ -427,10 +438,13 @@ plt.axvline(100, color='k',linewidth=1, alpha=0.3);
 plt.axvline(150, color='k', linewidth=1, alpha=0.3);
 plt.axvline(200, color='k', linewidth=1, alpha=0.3);
 plt.axhline(.5, color='k', linestyle='--', label='chance');
-plt.axvspan(times[np.where(Fp_clust < 0.05)[1]][0],
-            times[np.where(Fp_clust < 0.05)[1]][-1], 
-           label="Cluster based permutation p<.05",
-           color="green", alpha=0.3)
+mask = Fp_clust.reshape(300) < 0.05
+first_vals = np.argwhere((~mask[:-1] & mask[1:]))  # Look for False-True transitions
+last_vals = np.argwhere((mask[:-1] & ~mask[1:])) + 1  # Look for True-False transitions
+for start, stop in zip(first_vals, last_vals):
+    plt.axvspan(times[start], times[stop], alpha=0.3,
+               label="Cluster based permutation p<.05",
+               color="green")
 plt.title('FRUIT Semantic Category Decoding');
 # plt.legend();
 plt.show();
@@ -446,6 +460,13 @@ plt.axvline(100, color='k',linewidth=1, alpha=0.3);
 plt.axvline(150, color='k', linewidth=1, alpha=0.3);
 plt.axvline(200, color='k', linewidth=1, alpha=0.3);
 plt.axhline(.5, color='k', linestyle='--', label='chance');
+mask = Op_clust.reshape(300) < 0.05
+first_vals = np.argwhere((~mask[:-1] & mask[1:]))  # Look for False-True transitions
+last_vals = np.argwhere((mask[:-1] & ~mask[1:])) + 1  # Look for True-False transitions
+for start, stop in zip(first_vals, last_vals):
+    plt.axvspan(times[start], times[stop], alpha=0.3,
+               label="Cluster based permutation p<.05",
+               color="green")
 plt.title('ODOUR Semantic Category Decoding'); 
 # plt.legend();
 plt.show();
@@ -480,10 +501,19 @@ plt.axvline(100, color='k',linewidth=1, alpha=0.3);
 plt.axvline(150, color='k', linewidth=1, alpha=0.3);
 plt.axvline(200, color='k', linewidth=1, alpha=0.3);
 plt.axhline(.5, color='k', linestyle='--', label='chance');
-plt.axvspan(times[np.where(SDp_clust < 0.05)[1]][0],
-            times[np.where(SDp_clust < 0.05)[1]][-1], 
-           label="Cluster based permutation p<.05",
-           color="green", alpha=0.3)
+# plt.axvspan(times[np.where(SDp_clust < 0.05)[1]][0],
+#             times[np.where(SDp_clust < 0.05)[1]][-1], 
+#            label="Cluster based permutation p<.05",
+#            color="green", alpha=0.3)
+
+mask = SDp_clust.reshape(300) < 0.05
+first_vals = np.argwhere((~mask[:-1] & mask[1:]))  # Look for False-True transitions
+last_vals = np.argwhere((mask[:-1] & ~mask[1:])) + 1  # Look for True-False transitions
+
+for start, stop in zip(first_vals, last_vals):
+    plt.axvspan(times[start], times[stop], alpha=0.3,
+               label="Cluster based permutation p<.05",
+               color="green")
 plt.title('SD_avg Semantic Category Decoding'); 
 # plt.legend();
 plt.show();
