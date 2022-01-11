@@ -260,7 +260,7 @@ with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/0111_LogReg_SDvsSD_s
 with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/0111_LogReg_SDvsSD_patterns.P", 'rb') as f:
       patterns = pickle.load(f)
       
-with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/0111_LogReg_SDvsSD_scores1130_LogReg_LDvsSD_scores.P", 'rb') as f:
+with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/0111_LogReg_SDvsSD_scores.P", 'rb') as f:
       scores = pickle.load(f)
 
 
@@ -273,7 +273,7 @@ times = np.arange(-300,900,4)
 
 scores['avg'] = [ [] for _ in range(len(scores)) ]
 
-for i in range(len(scores['frt'])):
+for i in range(len(scores['frtodr'])):
     scores['avg'][i] = np.array([scores['mlkfrt'][i],
                                  scores['frtodr'][i],
                                  scores['odrmlk'][i]]).mean(axis=0)
