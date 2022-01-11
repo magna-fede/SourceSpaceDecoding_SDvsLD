@@ -254,3 +254,97 @@ df_to_export = pd.DataFrame(scores)
 with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/0111_LogReg_SDvsSD_scores.P",
           'wb') as outfile:
     pickle.dump(df_to_export,outfile)
+
+###############################################################################
+
+with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/0111_LogReg_SDvsSD_patterns.P", 'rb') as f:
+      patterns = pickle.load(f)
+      
+with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/0111_LogReg_SDvsSD_scores1130_LogReg_LDvsSD_scores.P", 'rb') as f:
+      scores = pickle.load(f)
+
+
+
+import seaborn as sns
+import matplotlib.pyplot as plt
+from scipy.stats import sem
+
+times = np.arange(-300,900,4)
+
+scores['avg'] = [ [] for _ in range(len(scores)) ]
+
+for i in range(len(scores['frt'])):
+    scores['avg'][i] = np.array([scores['mlkfrt'][i],
+                                 scores['frtodr'][i],
+                                 scores['odrmlk'][i]]).mean(axis=0)
+    
+sns.lineplot(x=times, y=np.array(scores['avg']).mean(axis=0))
+plt.fill_between(x=times, \
+                 y1=(np.mean(np.array(scores['avg']),0)-sem(np.vstack(scores['avg']),0)), \
+                 y2=(np.mean(np.array(scores['avg']),0)+sem(np.vstack(scores['avg']),0)), \
+                 color='b', alpha=.1)
+plt.axvline(0, color='k');
+plt.axvline(50, color='k', linewidth=1, alpha=0.3);
+plt.axvline(100, color='k',linewidth=1, alpha=0.3);
+plt.axvline(150, color='k', linewidth=1, alpha=0.3);
+plt.axvline(200, color='k', linewidth=1, alpha=0.3);
+plt.title('SD vs average(SD)')
+plt.axhline(.5, color='k', linestyle='--', label='chance');
+# plt.legend();
+plt.show();
+
+for task in (['mlkfrt', 'frtodr', 'odrmlk']):
+    sns.lineplot(x=times, y=np.array(scores[task]).mean(axis=0))
+    # plt.fill_between(x=times, \
+    #                  y1=(np.mean(np.array(scores[task]),0) - \
+    #                      sem(np.array(scores[task]),0)), \
+    #                  y2=(np.mean(np.array(scores[task]),0) + \
+    #                      sem(np.array(scores[task]),0)), \
+    #                  color='b', alpha=.1)
+
+plt.axvline(0, color='k');
+plt.axvline(50, color='k', linewidth=1, alpha=0.3);
+plt.axvline(100, color='k',linewidth=1, alpha=0.3);
+plt.axvline(150, color='k', linewidth=1, alpha=0.3);
+plt.axvline(200, color='k', linewidth=1, alpha=0.3);
+plt.title('SD vs SD Decoding')
+plt.axhline(.5, color='k', linestyle='--', label='chance');
+plt.legend(['mlk vs frt', 'frt vs odr', 'odr vs mlk']);
+plt.show();
+
+patterns_roi = dict.fromkeys(kkROI)
+
+for roi in patterns_roi.keys():
+    patterns_roi[roi] = dict.fromkeys(['mlkfrt', 'frtodr', 'odrmlk'])
+    for task in patterns_roi[roi].keys():
+        patterns_roi[roi][task] = []
+    
+for i in range(18):
+    for roi in patterns_roi.keys():
+        for task in patterns_roi[roi].keys():
+            patterns_roi[roi][task].append(rms(np.array(patterns[task][i].loc[roi])))
+
+for roi in patterns_roi.keys():
+    patterns_roi[roi]['avg'] = []
+    
+for i in range(18):
+    for roi in patterns_roi.keys():
+        patterns_roi[roi]['avg'].append(np.array([patterns_roi[roi]['mlkfrt'][i],
+                                 patterns_roi[roi]['frtodr'][i],
+                                 patterns_roi[roi]['odrmlk'][i]]).mean(axis=0))    
+    
+for roi in patterns_roi.keys():
+    sns.lineplot(x=times, y=np.array(patterns_roi[roi]['avg']).mean(axis=0))
+# plt.fill_between(x=times, \
+#                  y1=(np.mean(np.array(scores['avg']),0)-sem(np.array(scores['avg']),0)), \
+#                  y2=(np.mean(np.array(scores['avg']),0)+sem(np.array(scores['avg']),0)), \
+#                  color='b', alpha=.1)
+plt.axvline(0, color='k');
+plt.axvline(50, color='k', linewidth=1, alpha=0.3);
+plt.axvline(100, color='k',linewidth=1, alpha=0.3);
+plt.axvline(150, color='k', linewidth=1, alpha=0.3);
+plt.axvline(200, color='k', linewidth=1, alpha=0.3);
+plt.title('SD vs average(SD) RMS patterns')
+
+plt.legend(patterns_roi.keys());
+plt.show();

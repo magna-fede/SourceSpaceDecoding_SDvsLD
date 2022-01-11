@@ -261,6 +261,9 @@ with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1130_LogReg_LDvsSD_s
           'wb') as outfile:
     pickle.dump(df_to_export,outfile)
 
+
+###############################################################################
+
 with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1130_LogReg_LDvsSD_patterns.P", 'rb') as f:
       patterns = pickle.load(f)
       
@@ -292,7 +295,7 @@ plt.axvline(50, color='k', linewidth=1, alpha=0.3);
 plt.axvline(100, color='k',linewidth=1, alpha=0.3);
 plt.axvline(150, color='k', linewidth=1, alpha=0.3);
 plt.axvline(200, color='k', linewidth=1, alpha=0.3);
-plt.title('LD vs average(SD) Semantic Category Decoding')
+plt.title('LD vs average(SD) Decoding')
 plt.axhline(.5, color='k', linestyle='--', label='chance');
 # plt.legend();
 plt.show();
@@ -311,7 +314,7 @@ plt.axvline(50, color='k', linewidth=1, alpha=0.3);
 plt.axvline(100, color='k',linewidth=1, alpha=0.3);
 plt.axvline(150, color='k', linewidth=1, alpha=0.3);
 plt.axvline(200, color='k', linewidth=1, alpha=0.3);
-plt.title('LD vs SD Semantic Category Decoding')
+plt.title('LD vs SD Decoding')
 plt.axhline(.5, color='k', linestyle='--', label='chance');
 plt.legend(['frt', 'mlk', 'odr']);
 plt.show();
