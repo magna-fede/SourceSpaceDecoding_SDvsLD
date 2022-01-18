@@ -1,14 +1,11 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# # Data for science Residency Project
+# # Author: Federica.Magnabosco@mrc-cbu.cam.ac.uk
 # 
 # In this project I will apply some of the notions lernt during the course to try to predict which brain regions and at which time point are sensitive to the different amount of semantic resources necessary for completing two different tasks. To do this, we will look at the source estimated activity of 6 Regions of Interest (ROIs) for one participant. The two tasks (lexical decision and semantic decision) are belived to vary in the amount of semantic resources necessary for completing the task. The activity is related to -300 ms to 900 ms post stimulus presentation.
-# We will try to predict to which task each trial belongs to and, after that, we will try to understand which ROI carries is sensitive to different semantics demands, by looking at the average and the maximum coefficient in each ROI at each time point.
-
+# In this script, we will try to predict semantic word category.
 # Import some relevant packages.
-# mne is a package used in the analysis of MEG and EEG brain data. We are importing some functions useful for decoding brain signal.
-# 
 
 import numpy as np
 import pandas as pd
@@ -27,10 +24,6 @@ from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from mne.decoding import (cross_val_multiscore, LinearModel, SlidingEstimator,
                           get_coef)
 
-def chunks(l, n):
-    """Yield successive n-sized chunks from l."""
-    for i in range(0, len(l), n):
-        yield l[i:i + n]
 
 def trials_no_category(row):
     """Change number of trials when ignoring category.
@@ -62,9 +55,12 @@ def rms(example):
     return rms_example 
 
 def divide_semK(trials):
+    """Divide data based on which semantic category each trial belongs to."""
     dic = {}
+    # loop over semantic category
     for semK in kk2:
         dic[semK] = []
+        # loop over each trial (based on trial number)
         for trial in trials['trial'][trials['category']==semK].unique():
             dic[semK].append(np.concatenate \
                               (trials['data'] \
@@ -73,10 +69,11 @@ def divide_semK(trials):
         dic[semK] = np.array(dic[semK])
     return dic
 
-
+# initialise dictionaries for storing scores and patterns
 participant_scores = []
 participant_patterns = []
 
+# loop over participants
 for sub in np.arange(0, 18):
     print(f"Analysing subject {sub}")
     # import the dataset containing 120 categories (6 ROIs * 4 tasks *5 categories)
@@ -93,16 +90,12 @@ for sub in np.arange(0, 18):
     
     kk = list(output.keys())
     
-    # As we can observe, the words belong to different semantic categories (kk2).
-    # In this project we will ignore it, and consider them just as different trials
-    # belonging either to the LD or milk task. 
     
     kk2 = ['visual', 'hand', 'hear', 'neutral','emotional']
     kkROI = ['lATL', 'rATL', 'AG', 'PTC', 'IFG', 'PVA']
     
     
-    # The data we are working on, are not in a format useful for decoding, 
-    # so we will reshape them.
+# First we will reorganise the data in pandas dataframe, instead of dict.
     # 
     # In the starting dataset, information about each category was grouped together (see 'kk'),
     # while we want to group together all the information about a certain trial, at each timepoint.
@@ -115,27 +108,30 @@ for sub in np.arange(0, 18):
 
     # comments just on the first section, as it's doing the same job for each
     # task, category, and ROI
+    
+    
     for j,k in enumerate(kk):
         # check the key identity about the task
         if k[0:2] == 'LD':
-            # check which category is this
+            # check which semantic category
             # (this checks if each category in kk2,
             # is present in k, the output[key] currently considered)
             mask_k = [k2 in k for k2 in kk2]
-            # and save the category as a np string
+            # and save the category as a string
             k2 = np.array(kk2)[mask_k][0]
-            # check which ROI this is referring to
+            # check which ROI
             mask_ROI = [k_ROI in k for k_ROI in kkROI]
             kROI = np.array(kkROI)[mask_ROI][0]
             # loop over trials
+            # this extracts data from the relevant key
+            # and save data as a pandas dataframe (easier to access info)
             for i in range(len(output[k])):
-                    # save data (contained in output[k]) about that ROI
-                    # for each trial (i) separately
+                # save data (contained in output[k])
+                # for each trial (i) separately
                 ls = [kROI, k2, i, output[k][i]]
-                    # containing info about semantic_category, trial, and data
+                # containing info about semantic_category, trial, and data
                 row = pd.Series(ls, index=trials_ld.columns)
-                    # and save in the relevant Dataframe, this case 
-                    # Task = lexical decision, ROI = lATL
+                # and append data to relevant dataframe
                 trials_ld = trials_ld.append(row, ignore_index=True) 
         
         elif k[0:4] == 'milk':
@@ -172,8 +168,7 @@ for sub in np.arange(0, 18):
                 ls = [kROI, k2, i, output[k][i]]
                 row = pd.Series(ls, index=trials_odr.columns)
                 trials_odr = trials_odr.append(row, ignore_index=True) 
-    # We now ignore the information about the categories and consider them just as different trials
-
+ 
     trials = {}
     trials['ld'] = trials_ld
     trials['mlk'] = trials_mlk
@@ -181,56 +176,50 @@ for sub in np.arange(0, 18):
     trials['odr'] = trials_odr
     
     trials_semK = {}
-    
+
+    # divide trials based on semantic category
     for tsk in list(trials.keys()):
-        trials_semK[tsk] = divide_semK(trials[tsk])
-        
-    # try not averaging because not enough trials otherwise
+        trials_semK[tsk] = divide_semK(trials[tsk])     
     
     # now let's average 3 trials together
-    sub_lds = {}
-    sub_frts = {}
-    sub_mlks = {}
-    sub_odrs = {}
+
+    sub = {}
+    sub['ld'] = dict.fromkeys(kk2)
+    sub['mlk'] = dict.fromkeys(kk2)
+    sub['frt'] = dict.fromkeys(kk2)
+    sub['odr'] = dict.fromkeys(kk2)
     
-    for dic in [sub_lds, sub_frts, sub_mlks, sub_odrs]:
+    for dic in sub.keys():
         for semK in kk2:
-            dic[semK] = []
+            sub[dic][semK] = []
     
-    for i, tsk in enumerate(trials_semK.values()):
+    for tsk in trials_semK.keys():
      
         # make sure the number of trials is a multiple of 3, or eliminate excess
-        for k in tsk.keys():
+        
+        for k in trials_semK[tsk].keys():
             
-            while len(tsk[k])%3 != 0:
-                tsk[k] = np.delete(tsk[k], len(tsk[k])-1, 0)
+            while len(trials_semK[tsk][k])%3 != 0:
+                trials_semK[tsk][k] = np.delete(trials_semK[tsk][k],
+                                                len(trials_semK[tsk][k])-1, 0)
         # create random groups of trials
-            new_tsk = np.split(tsk[k],len(tsk[k])/3)
+            new_tsk = np.split(trials_semK[tsk][k],len(trials_semK[tsk][k])/3)
             new_trials = []
         # calculate average for each timepoint of the 3 trials
+    # calculate average for each timepoint (axis=0) of the 3 trials
             for nt in new_tsk:
-                new_trials.append(np.mean(nt,0))
-            # assign group it in the corresponding task
-            
-            if i==0:
-                sub_lds[k] = new_trials
-            elif i==1:
-                sub_mlks[k] = new_trials
-            elif i==2:
-                sub_frts[k] = new_trials
-            elif i==3:
-                sub_odrs[k] = new_trials
-            
-    subt = {}
-    subt['ld'] = sub_lds
-    subt['mlk'] = sub_mlks
-    subt['frt'] = sub_frts
-    subt['odr'] = sub_odrs
+                new_trials.append(np.mean(np.array(nt),0))
     
-    trials_semK = subt
-    
+            # assign group to the corresponding task in the dict       
+            sub[tsk][k] = np.array(new_trials)
+            
+    trials_semK = sub
+
+    # retrive information about the vertices    
     vertices = []
     
+    # using 'frt', 'visual', trial=0, as vertices order doesn't change, 
+    # so it doesn't matter which task, category and trial looking up    
     for roi in trials['frt'][(trials['frt']['category']=='visual') & \
                              (trials['frt']['trial']==0)]['data']:
         vertices.append(roi.shape[0])
@@ -238,21 +227,34 @@ for sub in np.arange(0, 18):
     print([v for v in vertices])
     
     ROI_vertices = []
-    
+ 
+    # create list with length=n_vertices containing ROI string for each vertex       
     for i in range(len(vertices)):
         ROI_vertices.extend([kkROI[i]]*vertices[i])
     
-    # We create and run the model. We expect the model to perform at chance before the presentation of the stimuli (no ROI should be sensitive to task/semantics demands before the presentation of a word).
+    # We create and run the model.
+    # this is taken from MNE example https://mne.tools/stable/auto_examples/decoding/decoding_spatio_temporal_source.html
+
+    # We expect the model to perform at chance before the presentation of the stimuli
+    # (no ROI should be sensitive to task/semantics demands before the presentation of a word).
     
     # prepare a series of classifier applied at each time sample
+    # this is the classifier
     clf = make_pipeline(StandardScaler(),  # z-score normalization
                         SelectKBest(f_classif, k='all'),  # it's not the whole brain so I think we are fine using them all
                         LinearModel(LogisticRegression(C=1,
                                                        solver='liblinear'))) # asking LDA to store covariance
+    
+    # Search Light
+    # "Fit, predict and score a series of models to each subset of the dataset along the last dimension"
     time_decod = SlidingEstimator(clf, scoring='roc_auc')
-        
+    
+    # create combination of all the possible comparisons among semantic categories    
     comb = []
     
+    # len(kk2) = 5
+    # len(groups) = 2
+    # so len(comb) = 10
     for i in combinations(kk2,2):
         comb.append(i)
     
@@ -272,298 +274,359 @@ for sub in np.arange(0, 18):
         for roi in patterns[tsk].keys():
             patterns[tsk][roi] = []
     
-    # just use subt instead of trials_semK if you want to have average of trials
+    # loop over task
     for task in trials_semK.keys():
+        # loop over each combination of semK classification
         for semKvsemK in comb:
+
+            # X input matrix, containing LD and task trials, it has dimension n_trial*n_vertices*n_timepoints
             X = np.concatenate([trials_semK[task][semKvsemK[0]],
                                     trials_semK[task][semKvsemK[1]]])
             
+            # Y category array. it has dimension n_trial            
             y = np.array([semKvsemK[0]]*len(trials_semK[task][semKvsemK[0]]) + \
                              [semKvsemK[1]]*len(trials_semK[task][semKvsemK[1]]))
             
+            # shuffle them, not sure it is necessary     
             X, y = shuffle(X, y, random_state=0)
             
+            # append the average of 5-fold cross validation to the scores dict for this task
             scores[task].append(cross_val_multiscore(time_decod,
                                                      X, y, cv=5).mean(axis=0))
             
+            # now let's look at the weight backprojection,
+            # MNE says "The fitting needs not be cross validated because the weights are based on
+            # the training sets"        
             time_decod.fit(X, y)
+            
+            # this already applies Haufe's trick
+            # Retrieve patterns after inversing the z-score normalization step            
             pattern = get_coef(time_decod, 'patterns_', inverse_transform=True)
+            
+            # append ROI information
             pattern = pd.DataFrame(pattern, index=ROI_vertices)
+            
+            # already append the ROOT-MEAN-SQUARE for patterns for that semK comparison
+            # in each roi, for each task and participant
             for roi in kkROI:
+                # this means that for each task, for each ROI, we have 10 patterns
+                # (because 10 different combinations of semK)
                 patterns[task][roi].append(rms(np.array(pattern.loc[roi])))
     
     participant_scores.append(scores)
     participant_patterns.append(patterns)
-    
-    
-    
-
-
-
-# df_to_export = pd.DataFrame(SDLD_scores)
-# with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1104_LDA_SDLD_scores.P",
-#           'wb') as outfile:
-#     pickle.dump(df_to_export,outfile)
-    
+ 
+ # save the scores ...   
 df_to_export = pd.DataFrame(participant_scores)
-with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/0112_LogReg_AVG_SemK_scores.P",
+with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/0113_LogReg_AVG_SemK_scores.P",
           'wb') as outfile:
     pickle.dump(df_to_export,outfile)
-    
+
+# ... and the patterns      
 df_to_export = pd.DataFrame(participant_patterns)
-with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/0112_LogReg_AVG_SemK_patterns.P",
+with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/0113_LogReg_AVG_SemK_patterns.P",
           'wb') as outfile:
     pickle.dump(df_to_export,outfile)
 
 ##########################################################
+
+# this part will plot the results,
+# you can either
+    # comment previous part (leaving the imported packages)
+    # or comment the loading part if you want to calculate again scores/patterns 
     
-with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1126_LogReg_AVG_SemK_scores.P", 'rb') as f:
-     df_to_export = pickle.load(f)
+with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/0113_LogReg_AVG_SemK_scores.P", 'rb') as f:
+    participant_scores = pickle.load(f)
+
+
+with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/0113_LogReg_AVG_SemK_patterns.P", 'rb') as f:
+    participant_patterns = pickle.load(f)
 
 
 import seaborn as sns
 import matplotlib.pyplot as plt
 from scipy.stats import sem
 
-LD_mean = []
+# create times array
+times = np.arange(-300,900,4)
 
-for participant in df_to_export['ld']:
-    avg_each_combination = np.array(participant).mean(axis=1)
-    avg_task = avg_each_combination.mean(axis=0)
-    LD_mean.append(avg_task)
+# initialise patterns where to store mean over semK
+patterns_mean = {}
+patterns_mean['ld'] = dict.fromkeys(kkROI)
+patterns_mean['mlk'] = dict.fromkeys(kkROI)
+patterns_mean['frt'] = dict.fromkeys(kkROI)
+patterns_mean['odr'] = dict.fromkeys(kkROI)
 
-LD_mean = np.array(LD_mean)
+# loop over task
+for tsk in patterns_mean.keys():
+    # and over rois
+    for roi in patterns_mean[tsk].keys():
+        patterns_mean[tsk][roi] = []
 
-MLK_mean = []
+# loop over pariticpants
+for sub in range(18):
+    # loop over task
+    for task in patterns_mean.keys():
+        # loop over ROIs
+        for roi in kkROI:
+            # append the average of the RMS(patterns) over each semK comparison
+            patterns_mean[task][roi].append(np.array(participant_patterns[sub][task][roi]).mean(axis=0))
 
-for participant in df_to_export['mlk']:
-    avg_each_combination = np.array(participant).mean(axis=1)
-    avg_task = avg_each_combination.mean(axis=0)
-    MLK_mean.append(avg_task)
+# now calculate the average of RMS across tasks for each participant
+patterns_mean['avg'] = dict.fromkeys(kkROI)
+for roi in patterns_mean['avg'].keys():
+    patterns_mean['avg'][roi] = []
 
-MLK_mean = np.array(MLK_mean)
+# loop over participants    
+for i in range(18):
+    # loop over ROIs
+    for roi in patterns_mean['avg'].keys():
+        # append the average of RMS(pattern) of each SD task
+        # (this is already the average across semK comparison)
+        patterns_mean['avg'][roi].append(np.array([patterns_mean['mlk'][roi][i],
+                                 patterns_mean['frt'][roi][i],
+                                 patterns_mean['odr'][roi][i]]).mean(axis=0))    
+    
 
-FRT_mean = []
+# now plot!
 
-for participant in df_to_export['frt']:
-    avg_each_combination = np.array(participant).mean(axis=1)
-    avg_task = avg_each_combination.mean(axis=0)
-    FRT_mean.append(avg_task)
+# all ROIs in one plot, this is Semantic Decision average
+for roi in patterns_mean['avg'].keys():
+    sns.lineplot(x=times, y=np.array(patterns_mean['avg'][roi]).mean(axis=0))
+# plt.fill_between(x=times, \
+#                  y1=(np.mean(np.array(scores['avg']),0)-sem(np.array(scores['avg']),0)), \
+#                  y2=(np.mean(np.array(scores['avg']),0)+sem(np.array(scores['avg']),0)), \
+#                  color='b', alpha=.1)
+plt.axvline(0, color='k');
+plt.axvline(50, color='k', linewidth=1, alpha=0.3);
+plt.axvline(100, color='k',linewidth=1, alpha=0.3);
+plt.axvline(150, color='k', linewidth=1, alpha=0.3);
+plt.axvline(200, color='k', linewidth=1, alpha=0.3);
+plt.title('WordSemK SEMANTIC RMS patterns')
+plt.legend(patterns_mean['avg'].keys());
+plt.show();
+plt.savefig(f'U:/Decoding_SDLD/Figures/LogReg_semK_avgSD_patterns.png', format='png')
 
-FRT_mean = np.array(FRT_mean)
 
-ODR_mean = []
+for roi in patterns_mean['mlk'].keys():
+    sns.lineplot(x=times, y=np.array(patterns_mean['mlk'][roi]).mean(axis=0))
+# plt.fill_between(x=times, \
+#                  y1=(np.mean(np.array(scores['avg']),0)-sem(np.array(scores['avg']),0)), \
+#                  y2=(np.mean(np.array(scores['avg']),0)+sem(np.array(scores['avg']),0)), \
+#                  color='b', alpha=.1)
+plt.axvline(0, color='k');
+plt.axvline(50, color='k', linewidth=1, alpha=0.3);
+plt.axvline(100, color='k',linewidth=1, alpha=0.3);
+plt.axvline(150, color='k', linewidth=1, alpha=0.3);
+plt.axvline(200, color='k', linewidth=1, alpha=0.3);
+plt.title('WordSemK MILK RMS patterns')
+plt.legend(patterns_mean['mlk'].keys());
+plt.show();
+plt.savefig(f'U:/Decoding_SDLD/Figures/LogReg_semK_MILK_patterns.png', format='png')
 
-for participant in df_to_export['odr']:
-    avg_each_combination = np.array(participant).mean(axis=1)
-    avg_task = avg_each_combination.mean(axis=0)
-    ODR_mean.append(avg_task)
 
-ODR_mean = np.array(ODR_mean)
+for roi in patterns_mean['frt'].keys():
+    sns.lineplot(x=times, y=np.array(patterns_mean['frt'][roi]).mean(axis=0))
+# plt.fill_between(x=times, \
+#                  y1=(np.mean(np.array(scores['avg']),0)-sem(np.array(scores['avg']),0)), \
+#                  y2=(np.mean(np.array(scores['avg']),0)+sem(np.array(scores['avg']),0)), \
+#                  color='b', alpha=.1)
+plt.axvline(0, color='k');
+plt.axvline(50, color='k', linewidth=1, alpha=0.3);
+plt.axvline(100, color='k',linewidth=1, alpha=0.3);
+plt.axvline(150, color='k', linewidth=1, alpha=0.3);
+plt.axvline(200, color='k', linewidth=1, alpha=0.3);
+plt.title('WordSemK FRUIT RMS patterns')
+plt.legend(patterns_mean['frt'].keys());
+plt.show();
+plt.savefig(f'U:/Decoding_SDLD/Figures/LogReg_semK_FRUIT_patterns.png', format='png')
+
+for roi in patterns_mean['odr'].keys():
+    sns.lineplot(x=times, y=np.array(patterns_mean['odr'][roi]).mean(axis=0))
+# plt.fill_between(x=times, \
+#                  y1=(np.mean(np.array(scores['avg']),0)-sem(np.array(scores['avg']),0)), \
+#                  y2=(np.mean(np.array(scores['avg']),0)+sem(np.array(scores['avg']),0)), \
+#                  color='b', alpha=.1)
+plt.axvline(0, color='k');
+plt.axvline(50, color='k', linewidth=1, alpha=0.3);
+plt.axvline(100, color='k',linewidth=1, alpha=0.3);
+plt.axvline(150, color='k', linewidth=1, alpha=0.3);
+plt.axvline(200, color='k', linewidth=1, alpha=0.3);
+plt.title('WordSemK ODOUR RMS patterns')
+plt.legend(patterns_mean['odr'].keys());
+plt.show();
+plt.savefig(f'U:/Decoding_SDLD/Figures/LogReg_semK_ODOUR_patterns.png', format='png')
+
+
+for roi in patterns_mean['ld'].keys():
+    sns.lineplot(x=times, y=np.array(patterns_mean['ld'][roi]).mean(axis=0))
+# plt.fill_between(x=times, \
+#                  y1=(np.mean(np.array(scores['avg']),0)-sem(np.array(scores['avg']),0)), \
+#                  y2=(np.mean(np.array(scores['avg']),0)+sem(np.array(scores['avg']),0)), \
+#                  color='b', alpha=.1)
+plt.axvline(0, color='k');
+plt.axvline(50, color='k', linewidth=1, alpha=0.3);
+plt.axvline(100, color='k',linewidth=1, alpha=0.3);
+plt.axvline(150, color='k', linewidth=1, alpha=0.3);
+plt.axvline(200, color='k', linewidth=1, alpha=0.3);
+plt.title('WordSemK LEXICAL DECISION RMS patterns')
+plt.legend(patterns_mean['ld'].keys());
+plt.show();
+plt.savefig(f'U:/Decoding_SDLD/Figures/LogReg_semK_LD_patterns.png', format='png')
+
+######## now working on accuracy (aka scores)
+
+# get the mean over the 10 different combinations
+scores_mean = dict.fromkeys(['ld', 
+                             'mlk', 
+                             'frt', 
+                             'odr'])
+
+for tsk in scores_mean.keys():
+    scores_mean[tsk] = []
+
+# loop over participants
+for sub in range(18):
+    # loop over tasks
+    for task in scores_mean.keys():
+        # append average performance over each semK combination
+        scores_mean[task].append(np.array(participant_scores[sub][task]).mean(axis=0))
+
+scores_mean['avg'] = []
+
+for i in range(18):
+    # append average performance across various SD tasks
+    scores_mean['avg'].append(np.array([scores_mean['mlk'][i],
+                                 scores_mean['frt'][i],
+                                 scores_mean['odr'][i]]).mean(axis=0))    
+
+# calculate when accuracy is significantly different from chance
 
 from scipy.stats import ttest_1samp
 from scipy import stats
 
 from mne.stats import permutation_cluster_1samp_test
+
+# this is taken from MNE's python example on how to perform 
+# Non-parametric cluster-level paired t-test.
+# https://mne.tools/stable/auto_tutorials/stats-sensor-space/10_background_stats.html#sphx-glr-auto-tutorials-stats-sensor-space-10-background-stats-py
    
-_ , LDpvalues = ttest_1samp(LD_mean, popmean=.5, axis=0)
+_ , SDpvalues = ttest_1samp(scores_mean['avg'], popmean=.5, axis=0)
 
+SDp_clust = np.zeros(300)
+SD_mean = np.array(scores_mean['avg'])
+# Reshape data to what is equivalent to (n_samples, n_space, n_time)
+SD_mean.shape = (18, 1, 300)
+# Compute threshold from t distribution (this is also the default)
+threshold = stats.distributions.t.ppf(1 - 0.05, 18 - 1)
+SDt_clust, SDclusters, SDp_values, H0 = permutation_cluster_1samp_test(
+    SD_mean-.5, n_jobs=1, threshold=threshold, adjacency=None,
+    n_permutations='all')
+# Put the cluster data in a viewable format
+p_clust = np.ones((1,300))
+for cl, p in zip(SDclusters, SDp_values):
+    p_clust[cl] = p
+SDp_clust = p_clust.T
+SDp_clust.shape = (300)
 
+_ , LDpvalues = ttest_1samp(scores_mean['ld'], popmean=.5, axis=0)
+
+LDp_clust = np.zeros(300)
+LD_mean = np.array(scores_mean['ld'])
 # Reshape data to what is equivalent to (n_samples, n_space, n_time)
 LD_mean.shape = (18, 1, 300)
 # Compute threshold from t distribution (this is also the default)
 threshold = stats.distributions.t.ppf(1 - 0.05, 18 - 1)
-Lt_clust, Lclusters, Lp_values, H0 = permutation_cluster_1samp_test(
+LDt_clust, LDclusters, LDp_values, H0 = permutation_cluster_1samp_test(
     LD_mean-.5, n_jobs=1, threshold=threshold, adjacency=None,
     n_permutations='all')
 # Put the cluster data in a viewable format
-Lp_clust = np.ones((1,300))
-for cl, p in zip(Lclusters, Lp_values):
-    Lp_clust[cl] = p
+p_clust = np.ones((1,300))
+for cl, p in zip(LDclusters, LDp_values):
+    p_clust[cl] = p
+LDp_clust = p_clust.T
+LDp_clust.shape = (300)
 
-MLK_mean.shape = (18, 1, 300)
-# Compute threshold from t distribution (this is also the default)
-threshold = stats.distributions.t.ppf(1 - 0.05, 18 - 1)
-Mt_clust, Mclusters, Mp_values, MH0 = permutation_cluster_1samp_test(
-    MLK_mean-.5, n_jobs=1, threshold=threshold, adjacency=None,
-    n_permutations='all')
-# Put the cluster data in a viewable format
-Mp_clust = np.ones((1,300))
-for cl, p in zip(Mclusters, Mp_values):
-    Mp_clust[cl] = p
+# now plot accuracies, with areas where significantly different from chance
 
-
-FRT_mean.shape = (18, 1, 300)
-# Compute threshold from t distribution (this is also the default)
-threshold = stats.distributions.t.ppf(1 - 0.05, 18 - 1)
-Ft_clust, Fclusters, Fp_values, FH0 = permutation_cluster_1samp_test(
-    FRT_mean-.5, n_jobs=1, threshold=threshold, adjacency=None,
-    n_permutations='all')
-# Put the cluster data in a viewable format
-Fp_clust = np.ones((1,300))
-for cl, p in zip(Fclusters, Fp_values):
-    Fp_clust[cl] = p
-
-ODR_mean.shape = (18, 1, 300)
-# Compute threshold from t distribution (this is also the default)
-threshold = stats.distributions.t.ppf(1 - 0.05, 18 - 1)
-Ot_clust, Oclusters, Op_values, OH0 = permutation_cluster_1samp_test(
-    ODR_mean-.5, n_jobs=1, threshold=threshold, adjacency=None,
-    n_permutations='all')
-# Put the cluster data in a viewable format
-Op_clust = np.ones((1,300))
-for cl, p in zip(Oclusters, Op_values):
-    Op_clust[cl] = p
-
-times = np.arange(-300,900,4)
-
-print(f'MILK TASK : Decoding semantic category at timepoints: \
-      {times[np.where(Mp_clust < 0.05)[1]]}')
-print(f'FRUIT TASK : Decoding semantic category at timepoints: \
-      {times[np.where(Fp_clust < 0.05)[1]]}')
-print(f'ODOUR TASK : Decoding semantic category at timepoints: \
-      {times[np.where(Op_clust < 0.05)[1]]}')
-print(f'LEXICAL DECISION: Decoding semantic category at timepoints: \
-      {times[np.where(Lp_clust < 0.05)[1]]}')
-
-
-LD_mean = np.array(LD_mean).reshape((18,300))
-MLK_mean = np.array(MLK_mean).reshape((18,300))
-FRT_mean = np.array(FRT_mean).reshape((18,300))
-ODR_mean = np.array(ODR_mean).reshape((18,300))
-
-sns.lineplot(x=times, y=np.mean(LD_mean,0))
-plt.fill_between(x=times, \
-                 y1=(np.mean(LD_mean,0)-sem(LD_mean,0)), \
-                 y2=(np.mean(LD_mean,0)+sem(LD_mean,0)), \
-                 color='b', alpha=.1)
+sns.lineplot(x=times, y=np.array(scores_mean['avg']).mean(axis=0))
+# plt.fill_between(x=times, \
+#                  y1=(np.mean(np.array(scores['avg']),0)-sem(np.array(scores['avg']),0)), \
+#                  y2=(np.mean(np.array(scores['avg']),0)+sem(np.array(scores['avg']),0)), \
+#                  color='b', alpha=.1)
 plt.axvline(0, color='k');
 plt.axvline(50, color='k', linewidth=1, alpha=0.3);
 plt.axvline(100, color='k',linewidth=1, alpha=0.3);
 plt.axvline(150, color='k', linewidth=1, alpha=0.3);
 plt.axvline(200, color='k', linewidth=1, alpha=0.3);
-plt.title('LD Semantic Category Decoding')
-plt.axhline(.5, color='k', linestyle='--', label='chance');
-mask = Lp_clust.reshape(300) < 0.05
-first_vals = np.argwhere((~mask[:-1] & mask[1:]))  # Look for False-True transitions
-last_vals = np.argwhere((mask[:-1] & ~mask[1:])) + 1  # Look for True-False transitions
-for start, stop in zip(first_vals, last_vals):
-    plt.axvspan(times[start], times[stop], alpha=0.3,
+# check is at least one point where it's significant
+if len(times[np.where(SDp_clust < 0.05)]) > 0:
+    ##### CAREFUL! this is wrong way to do this, check in accuracy script
+    for tp in times[np.where(SDp_clust < 0.05)]:
+        plt.axvspan(tp,tp,
                label="Cluster based permutation p<.05",
-               color="green")
+               color="green", alpha=0.3)
+plt.title(f'avg(SD) Accuracy Semantic Category Decoding')
+plt.axhline(.5, color='k', linestyle='--', label='chance');
+# plt.savefig(f'LD_{roi}.png', format='png')
 # plt.legend();
 plt.show();
-
-
-sns.lineplot(x=times, y=np.mean(MLK_mean,0))
-plt.fill_between(x=times, \
-                 y1=(np.mean(MLK_mean,0)-sem(MLK_mean,0)), \
-                 y2=(np.mean(MLK_mean,0)+sem(MLK_mean,0)), \
-                 color='b', alpha=.1)
-plt.axvline(0, color='k');
-plt.axvline(50, color='k', linewidth=1, alpha=0.3);
-plt.axvline(100, color='k',linewidth=1, alpha=0.3);
-plt.axvline(150, color='k', linewidth=1, alpha=0.3);
-plt.axvline(200, color='k', linewidth=1, alpha=0.3);
-plt.axhline(.5, color='k', linestyle='--', label='chance');
-mask = Mp_clust.reshape(300) < 0.05
-first_vals = np.argwhere((~mask[:-1] & mask[1:]))  # Look for False-True transitions
-last_vals = np.argwhere((mask[:-1] & ~mask[1:])) + 1  # Look for True-False transitions
-for start, stop in zip(first_vals, last_vals):
-    plt.axvspan(times[start], times[stop], alpha=0.3,
-               label="Cluster based permutation p<.05",
-               color="green")
-plt.title('MILK Semantic Category Decoding');
-# plt.legend();
-plt.show();
- 
-sns.lineplot(x=times, y=np.mean(FRT_mean,0))
-plt.fill_between(x=times, \
-                 y1=(np.mean(FRT_mean,0)-sem(FRT_mean,0)), \
-                 y2=(np.mean(FRT_mean,0)+sem(FRT_mean,0)), \
-                 color='b', alpha=.1)
-plt.axvline(0, color='k');
-plt.axvline(50, color='k', linewidth=1, alpha=0.3);
-plt.axvline(100, color='k',linewidth=1, alpha=0.3);
-plt.axvline(150, color='k', linewidth=1, alpha=0.3);
-plt.axvline(200, color='k', linewidth=1, alpha=0.3);
-plt.axhline(.5, color='k', linestyle='--', label='chance');
-mask = Fp_clust.reshape(300) < 0.05
-first_vals = np.argwhere((~mask[:-1] & mask[1:]))  # Look for False-True transitions
-last_vals = np.argwhere((mask[:-1] & ~mask[1:])) + 1  # Look for True-False transitions
-for start, stop in zip(first_vals, last_vals):
-    plt.axvspan(times[start], times[stop], alpha=0.3,
-               label="Cluster based permutation p<.05",
-               color="green")
-plt.title('FRUIT Semantic Category Decoding');
-# plt.legend();
-plt.show();
-
-sns.lineplot(x=times, y=np.mean(ODR_mean,0))
-plt.fill_between(x=times, \
-                 y1=(np.mean(ODR_mean,0)-sem(ODR_mean,0)), \
-                 y2=(np.mean(ODR_mean,0)+sem(ODR_mean,0)), \
-                 color='b', alpha=.1)
-plt.axvline(0, color='k');
-plt.axvline(50, color='k', linewidth=1, alpha=0.3);
-plt.axvline(100, color='k',linewidth=1, alpha=0.3);
-plt.axvline(150, color='k', linewidth=1, alpha=0.3);
-plt.axvline(200, color='k', linewidth=1, alpha=0.3);
-plt.axhline(.5, color='k', linestyle='--', label='chance');
-mask = Op_clust.reshape(300) < 0.05
-first_vals = np.argwhere((~mask[:-1] & mask[1:]))  # Look for False-True transitions
-last_vals = np.argwhere((mask[:-1] & ~mask[1:])) + 1  # Look for True-False transitions
-for start, stop in zip(first_vals, last_vals):
-    plt.axvspan(times[start], times[stop], alpha=0.3,
-               label="Cluster based permutation p<.05",
-               color="green")
-plt.title('ODOUR Semantic Category Decoding'); 
-# plt.legend();
-plt.show();
-
-SD_mean = np.mean(np.array([ MLK_mean, 
-                             FRT_mean, 
-                             ODR_mean ]),
-                  axis=0)
-
-SD_mean.shape = (18, 1, 300)
-
-# Compute threshold from t distribution (this is also the default)
-threshold = stats.distributions.t.ppf(1 - 0.05, 18 - 1)
-SDt_clust, SDclusters, SDp_values, SDH0 = permutation_cluster_1samp_test(
-    SD_mean-.5, n_jobs=1, threshold=threshold, adjacency=None,
-    n_permutations='all')
-# Put the cluster data in a viewable format
-SDp_clust = np.ones((1,300))
-for cl, p in zip(SDclusters, SDp_values):
-    SDp_clust[cl] = p
-
-SD_mean = np.array(SD_mean).reshape((18,300))
     
-sns.lineplot(x=times, y=np.mean(SD_mean, 0))
-plt.fill_between(x=times, \
-                 y1=(np.mean(SD_mean,0)-sem(SD_mean,0)), \
-                 y2=(np.mean(SD_mean,0)+sem(SD_mean,0)), \
-                 color='b', alpha=.1)
+sns.lineplot(x=times, y=np.array(scores_mean['ld']).mean(axis=0))
+# plt.fill_between(x=times, \
+#                  y1=(np.mean(np.array(scores['avg']),0)-sem(np.array(scores['avg']),0)), \
+#                  y2=(np.mean(np.array(scores['avg']),0)+sem(np.array(scores['avg']),0)), \
+#                  color='b', alpha=.1)
 plt.axvline(0, color='k');
 plt.axvline(50, color='k', linewidth=1, alpha=0.3);
 plt.axvline(100, color='k',linewidth=1, alpha=0.3);
 plt.axvline(150, color='k', linewidth=1, alpha=0.3);
 plt.axvline(200, color='k', linewidth=1, alpha=0.3);
-plt.axhline(.5, color='k', linestyle='--', label='chance');
-# plt.axvspan(times[np.where(SDp_clust < 0.05)[1]][0],
-#             times[np.where(SDp_clust < 0.05)[1]][-1], 
-#            label="Cluster based permutation p<.05",
-#            color="green", alpha=0.3)
-
-mask = SDp_clust.reshape(300) < 0.05
-first_vals = np.argwhere((~mask[:-1] & mask[1:]))  # Look for False-True transitions
-last_vals = np.argwhere((mask[:-1] & ~mask[1:])) + 1  # Look for True-False transitions
-
-for start, stop in zip(first_vals, last_vals):
-    plt.axvspan(times[start], times[stop], alpha=0.3,
+if len(times[np.where(LDp_clust < 0.05)]) > 0:
+    for tp in times[np.where(LDp_clust < 0.05)]:
+        plt.axvspan(tp,tp,
                label="Cluster based permutation p<.05",
-               color="green")
-plt.title('SD_avg Semantic Category Decoding'); 
+               color="green", alpha=0.3)
+plt.title(f'LD Accuracy Semantic Category Decoding')
+plt.axhline(.5, color='k', linestyle='--', label='chance');
+# plt.savefig(f'LD_{roi}.png', format='png')
 # plt.legend();
+plt.show();
+    
+
+sns.lineplot(x=times, y=np.array(scores_mean['mlk']).mean(axis=0))
+# plt.fill_between(x=times, \
+#                  y1=(np.mean(np.array(scores['avg']),0)-sem(np.array(scores['avg']),0)), \
+#                  y2=(np.mean(np.array(scores['avg']),0)+sem(np.array(scores['avg']),0)), \
+#                  color='b', alpha=.1)
+plt.axvline(0, color='k');
+plt.axvline(50, color='k', linewidth=1, alpha=0.3);
+plt.axvline(100, color='k',linewidth=1, alpha=0.3);
+plt.axvline(150, color='k', linewidth=1, alpha=0.3);
+plt.axvline(200, color='k', linewidth=1, alpha=0.3);
+plt.title('WordSemK MILK accuracy')
+plt.show();
+sns.lineplot(x=times, y=np.array(scores_mean['frt']).mean(axis=0))
+# plt.fill_between(x=times, \
+#                  y1=(np.mean(np.array(scores['avg']),0)-sem(np.array(scores['avg']),0)), \
+#                  y2=(np.mean(np.array(scores['avg']),0)+sem(np.array(scores['avg']),0)), \
+#                  color='b', alpha=.1)
+plt.axvline(0, color='k');
+plt.axvline(50, color='k', linewidth=1, alpha=0.3);
+plt.axvline(100, color='k',linewidth=1, alpha=0.3);
+plt.axvline(150, color='k', linewidth=1, alpha=0.3);
+plt.axvline(200, color='k', linewidth=1, alpha=0.3);
+plt.title('WordSemK FRUIT accuracy')
+plt.show();
+sns.lineplot(x=times, y=np.array(scores_mean['odr']).mean(axis=0))
+# plt.fill_between(x=times, \
+#                  y1=(np.mean(np.array(scores['avg']),0)-sem(np.array(scores['avg']),0)), \
+#                  y2=(np.mean(np.array(scores['avg']),0)+sem(np.array(scores['avg']),0)), \
+#                  color='b', alpha=.1)
+plt.axvline(0, color='k');
+plt.axvline(50, color='k', linewidth=1, alpha=0.3);
+plt.axvline(100, color='k',linewidth=1, alpha=0.3);
+plt.axvline(150, color='k', linewidth=1, alpha=0.3);
+plt.axvline(200, color='k', linewidth=1, alpha=0.3);
+plt.title('WordSemK ODOUR accuracy')
 plt.show();
