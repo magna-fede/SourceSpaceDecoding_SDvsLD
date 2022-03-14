@@ -407,7 +407,6 @@ plt.legend(patterns_mean['avg'].keys());
 plt.show();
 plt.savefig(f'U:/Decoding_SDLD/Figures/LogReg_semK_avgSD_patterns.png', format='png')
 
-
 for roi in patterns_mean['mlk'].keys():
     sns.lineplot(x=times, y=np.array(patterns_mean['mlk'][roi]).mean(axis=0))
 # plt.fill_between(x=times, \
@@ -424,6 +423,22 @@ plt.legend(patterns_mean['mlk'].keys());
 plt.show();
 plt.savefig(f'U:/Decoding_SDLD/Figures/LogReg_semK_MILK_patterns.png', format='png')
 
+
+for roi in patterns_mean['mlk'].keys():
+    sns.lineplot(x=times, y=np.array(patterns_mean['mlk'][roi]).mean(axis=0))
+# plt.fill_between(x=times, \
+#                  y1=(np.mean(np.array(scores['avg']),0)-sem(np.array(scores['avg']),0)), \
+#                  y2=(np.mean(np.array(scores['avg']),0)+sem(np.array(scores['avg']),0)), \
+#                  color='b', alpha=.1)
+plt.axvline(0, color='k');
+plt.axvline(50, color='k', linewidth=1, alpha=0.3);
+plt.axvline(100, color='k',linewidth=1, alpha=0.3);
+plt.axvline(150, color='k', linewidth=1, alpha=0.3);
+plt.axvline(200, color='k', linewidth=1, alpha=0.3);
+plt.title('WordSemK MILK RMS patterns')
+plt.legend(patterns_mean['mlk'].keys());
+plt.show();
+plt.savefig(f'U:/Decoding_SDLD/Figures/LogReg_semK_MILK_patterns.png', format='png')
 
 for roi in patterns_mean['frt'].keys():
     sns.lineplot(x=times, y=np.array(patterns_mean['frt'][roi]).mean(axis=0))
@@ -570,12 +585,26 @@ plt.title(f'avg(SD) Accuracy Semantic Category Decoding')
 plt.axhline(.5, color='k', linestyle='--', label='chance');
 # plt.savefig(f'LD_{roi}.png', format='png')
 # plt.legend();
+# check it is significant
+mask = SDp_clust.reshape(300) < 0.05
+first_vals = np.argwhere((~mask[:-1] & mask[1:]))  # Look for False-True transitions
+last_vals = np.argwhere((mask[:-1] & ~mask[1:])) + 1  # Look for True-False transitions
+for start, stop in zip(first_vals, last_vals):
+    plt.axvspan(times[start], times[stop], alpha=0.3,
+               label="Cluster based permutation p<.05",
+               color="green")
+plt.title(f'avg(SD) Accuracy Semantic Category Decoding')
+plt.axhline(.5, color='k', linestyle='--', label='chance');
+plt.legend()
+plt.savefig(f'U:/Decoding_SDLD/Figures/LogReg_semK_LD_accuracy.png', format='png')
 plt.show();
     
 sns.lineplot(x=times, y=np.array(scores_mean['ld']).mean(axis=0))
 # plt.fill_between(x=times, \
 #                  y1=(np.mean(np.array(scores['avg']),0)-sem(np.array(scores['avg']),0)), \
 #                  y2=(np.mean(np.array(scores['avg']),0)+sem(np.array(scores['avg']),0)), \
+#                  y1=(np.mean(np.array(scores['ld']),0)-sem(np.array(scores['ld']),0)), \
+#                  y2=(np.mean(np.array(scores['ld']),0)+sem(np.array(scores['ld']),0)), \
 #                  color='b', alpha=.1)
 plt.axvline(0, color='k');
 plt.axvline(50, color='k', linewidth=1, alpha=0.3);
@@ -591,6 +620,18 @@ plt.title(f'LD Accuracy Semantic Category Decoding')
 plt.axhline(.5, color='k', linestyle='--', label='chance');
 # plt.savefig(f'LD_{roi}.png', format='png')
 # plt.legend();
+# check it is significant
+mask = LDp_clust.reshape(300) < 0.05
+first_vals = np.argwhere((~mask[:-1] & mask[1:]))  # Look for False-True transitions
+last_vals = np.argwhere((mask[:-1] & ~mask[1:])) + 1  # Look for True-False transitions
+for start, stop in zip(first_vals, last_vals):
+    plt.axvspan(times[start], times[stop], alpha=0.3,
+               label="Cluster based permutation p<.05",
+               color="green")
+plt.title(f'LD Accuracy Semantic Category Decoding')
+plt.axhline(.5, color='k', linestyle='--', label='chance');
+plt.legend()
+plt.savefig(f'U:/Decoding_SDLD/Figures/LogReg_semK_SD_accuracy.png', format='png')
 plt.show();
     
 
@@ -611,6 +652,9 @@ sns.lineplot(x=times, y=np.array(scores_mean['frt']).mean(axis=0))
 #                  y1=(np.mean(np.array(scores['avg']),0)-sem(np.array(scores['avg']),0)), \
 #                  y2=(np.mean(np.array(scores['avg']),0)+sem(np.array(scores['avg']),0)), \
 #                  color='b', alpha=.1)
+
+
+sns.lineplot(x=times, y=np.array(scores_mean['frt']).mean(axis=0))
 plt.axvline(0, color='k');
 plt.axvline(50, color='k', linewidth=1, alpha=0.3);
 plt.axvline(100, color='k',linewidth=1, alpha=0.3);
@@ -623,6 +667,9 @@ sns.lineplot(x=times, y=np.array(scores_mean['odr']).mean(axis=0))
 #                  y1=(np.mean(np.array(scores['avg']),0)-sem(np.array(scores['avg']),0)), \
 #                  y2=(np.mean(np.array(scores['avg']),0)+sem(np.array(scores['avg']),0)), \
 #                  color='b', alpha=.1)
+
+
+sns.lineplot(x=times, y=np.array(scores_mean['odr']).mean(axis=0))
 plt.axvline(0, color='k');
 plt.axvline(50, color='k', linewidth=1, alpha=0.3);
 plt.axvline(100, color='k',linewidth=1, alpha=0.3);
