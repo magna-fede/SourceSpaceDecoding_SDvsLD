@@ -289,6 +289,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from scipy.stats import sem
 
+
 LD_mean = dict.fromkeys(kkROI)
 
 for k in LD_mean.keys():
@@ -437,11 +438,24 @@ for roi in kkROI:
     plt.axvline(100, color='k',linewidth=1, alpha=0.3);
     plt.axvline(150, color='k', linewidth=1, alpha=0.3);
     plt.axvline(200, color='k', linewidth=1, alpha=0.3);
-    if len(times[np.where(Lp_clust[roi] < 0.05)]) > 0:
-        for tp in times[np.where(Lp_clust[roi] < 0.05)]:
-            plt.axvspan(tp,tp,
-                    label="Cluster based permutation p<.05",
-                    color="green", alpha=0.3)
+    mask = Lp_clust[roi] < 0.05
+    mask = mask.values.reshape(300)
+    first_vals = np.argwhere((~mask[:-1] & mask[1:]))  # Look for False-True transitions
+    last_vals = np.argwhere((mask[:-1] & ~mask[1:])) + 1  # Look for True-False transitions
+
+    for start, stop in zip(first_vals, last_vals):
+        plt.axvspan(times[start], times[stop], alpha=0.5,
+                   label="Cluster based permutation p<.05",
+                   color="green")
+    # plt.legend();
+    mask = stats.ttest_1samp(LD_mean[roi], .2)[1] < 0.05
+    first_vals = np.argwhere((~mask[:-1] & mask[1:]))  # Look for False-True transitions
+    last_vals = np.argwhere((mask[:-1] & ~mask[1:])) + 1  # Look for True-False transitions
+
+    for start, stop in zip(first_vals, last_vals):
+        plt.axvspan(times[start], times[stop], alpha=0.2,
+                   label="Cluster based permutation p<.05",
+                   color="yellow")    
     plt.title(f'LD - {roi} Semantic Category Decoding')
     plt.axhline(.2, color='k', linestyle='--', label='chance');
     plt.savefig(f'LD_{roi}.png', format='png')
@@ -460,11 +474,24 @@ for roi in kkROI:
     plt.axvline(150, color='k', linewidth=1, alpha=0.3);
     plt.axvline(200, color='k', linewidth=1, alpha=0.3);
     plt.axhline(.2, color='k', linestyle='--', label='chance');
-    if len(times[np.where(Mp_clust[roi] < 0.05)]) > 0:
-        for tp in times[np.where(Mp_clust[roi] < 0.05)]:
-            plt.axvspan(tp,tp,
-                    label="Cluster based permutation p<.05",
-                    color="green", alpha=0.3)
+    mask = Mp_clust[roi] < 0.05
+    mask = mask.values.reshape(300)
+    first_vals = np.argwhere((~mask[:-1] & mask[1:]))  # Look for False-True transitions
+    last_vals = np.argwhere((mask[:-1] & ~mask[1:])) + 1  # Look for True-False transitions
+
+    for start, stop in zip(first_vals, last_vals):
+        plt.axvspan(times[start], times[stop], alpha=0.5,
+                   label="Cluster based permutation p<.05",
+                   color="green")
+    # plt.legend();
+    mask = stats.ttest_1samp(MLK_mean[roi], .2)[1] < 0.05
+    first_vals = np.argwhere((~mask[:-1] & mask[1:]))  # Look for False-True transitions
+    last_vals = np.argwhere((mask[:-1] & ~mask[1:])) + 1  # Look for True-False transitions
+
+    for start, stop in zip(first_vals, last_vals):
+        plt.axvspan(times[start], times[stop], alpha=0.2,
+                   label="Cluster based permutation p<.05",
+                   color="yellow")    
     plt.title(f'MILK - {roi} Semantic Category Decoding');
     plt.savefig(f'MILK_{roi}.png', format='png');
     # plt.legend();
@@ -482,11 +509,25 @@ for roi in kkROI:
     plt.axvline(150, color='k', linewidth=1, alpha=0.3);
     plt.axvline(200, color='k', linewidth=1, alpha=0.3);
     plt.axhline(.2, color='k', linestyle='--', label='chance');
-    if len(times[np.where(Fp_clust[roi] < 0.05)]) > 0:
-        for tp in times[np.where(Fp_clust[roi] < 0.05)]:
-            plt.axvspan(tp,tp,
-                    label="Cluster based permutation p<.05",
-                    color="green", alpha=0.3)
+    mask = Fp_clust[roi] < 0.05
+    mask = mask.values.reshape(300)
+    first_vals = np.argwhere((~mask[:-1] & mask[1:]))  # Look for False-True transitions
+    last_vals = np.argwhere((mask[:-1] & ~mask[1:])) + 1  # Look for True-False transitions
+
+    for start, stop in zip(first_vals, last_vals):
+        plt.axvspan(times[start], times[stop], alpha=0.5,
+                   label="Cluster based permutation p<.05",
+                   color="green")
+
+    # plt.legend();
+    mask = stats.ttest_1samp(FRT_mean[roi], .2)[1] < 0.05
+    first_vals = np.argwhere((~mask[:-1] & mask[1:]))  # Look for False-True transitions
+    last_vals = np.argwhere((mask[:-1] & ~mask[1:])) + 1  # Look for True-False transitions
+
+    for start, stop in zip(first_vals, last_vals):
+        plt.axvspan(times[start], times[stop], alpha=0.2,
+                   label="Cluster based permutation p<.05",
+                   color="yellow")    
     plt.title(f'FRUIT - {roi} Semantic Category Decoding');
     plt.savefig(f'FRUIT_{roi}.png', format='png');
     # plt.legend();
@@ -504,11 +545,25 @@ for roi in kkROI:
     plt.axvline(150, color='k', linewidth=1, alpha=0.3);
     plt.axvline(200, color='k', linewidth=1, alpha=0.3);
     plt.axhline(.2, color='k', linestyle='--', label='chance');
-    if len(times[np.where(Op_clust[roi] < 0.05)]) > 0:
-        for tp in times[np.where(Op_clust[roi] < 0.05)]:
-            plt.axvspan(tp,tp,
-                    label="Cluster based permutation p<.05",
-                    color="green", alpha=0.3)
+    mask = Op_clust[roi] < 0.05
+    mask = mask.values.reshape(300)
+    first_vals = np.argwhere((~mask[:-1] & mask[1:]))  # Look for False-True transitions
+    last_vals = np.argwhere((mask[:-1] & ~mask[1:])) + 1  # Look for True-False transitions
+
+    for start, stop in zip(first_vals, last_vals):
+        plt.axvspan(times[start], times[stop], alpha=0.5,
+                   label="Cluster based permutation p<.05",
+                   color="green")
+    # plt.legend();
+    mask = stats.ttest_1samp(ODR_mean[roi], .2)[1] < 0.05
+    first_vals = np.argwhere((~mask[:-1] & mask[1:]))  # Look for False-True transitions
+    last_vals = np.argwhere((mask[:-1] & ~mask[1:])) + 1  # Look for True-False transitions
+
+    for start, stop in zip(first_vals, last_vals):
+        plt.axvspan(times[start], times[stop], alpha=0.2,
+                   label="Cluster based permutation p<.05",
+                   color="yellow")    
+
     plt.title(f'ODOUR {roi} Semantic Category Decoding'); 
     plt.savefig(f'ODOUR_{roi}.png', format='png');
     plt.show();
@@ -552,12 +607,33 @@ for roi in kkROI:
     plt.axvline(150, color='k', linewidth=1, alpha=0.3);
     plt.axvline(200, color='k', linewidth=1, alpha=0.3);
     plt.axhline(.2, color='k', linestyle='--', label='chance');
-    if len(times[np.where(SDp_clust[roi] < 0.05)]) > 0:
-        for tp in times[np.where(SDp_clust[roi] < 0.05)]:
-            plt.axvspan(tp,tp,
-                    label="Cluster based permutation p<.05",
-                    color="green", alpha=0.3)
-    plt.title(f'SD_avg {roi} Semantic Category Decoding'); 
+    # if len(times[np.where(SDp_clust[roi] < 0.05)]) > 0:
+    #     for tp in times[np.where(SDp_clust[roi] < 0.05)]:
+    #         plt.axvspan(tp,tp,
+    #                 label="Cluster based permutation p<.05",
+    #                 color="green", alpha=0.3)
+    mask = SDp_clust[roi] < 0.05
+    mask = mask.values.reshape(300)
+    first_vals = np.argwhere((~mask[:-1] & mask[1:]))  # Look for False-True transitions
+    last_vals = np.argwhere((mask[:-1] & ~mask[1:])) + 1  # Look for True-False transitions
+
+    for start, stop in zip(first_vals, last_vals):
+        plt.axvspan(times[start], times[stop], alpha=0.5,
+                   label="Cluster based permutation p<.05",
+                   color="green")
+    plt.title('SD_avg Semantic Category Decoding'); 
     # plt.legend();
+    mask = stats.ttest_1samp(SD_mean[roi], .2)[1] < 0.05
+    first_vals = np.argwhere((~mask[:-1] & mask[1:]))  # Look for False-True transitions
+    last_vals = np.argwhere((mask[:-1] & ~mask[1:])) + 1  # Look for True-False transitions
+
+    for start, stop in zip(first_vals, last_vals):
+        plt.axvspan(times[start], times[stop], alpha=0.2,
+                   label="Cluster based permutation p<.05",
+                   color="yellow")
+    plt.title('SD_avg Semantic Category Decoding')
+    #plt.legend();
     plt.savefig(f'SD_avg_{roi}.png', format='png')
     plt.show();
+    
+times[np.where(stats.ttest_1samp(SD_mean[roi], .2)[1] < 0.05)]
