@@ -232,7 +232,7 @@ for sub in np.arange(0, 18):
                         SelectKBest(f_classif, k='all'),  # it's not the whole brain so I think we are fine using them all
                         LinearModel(LogisticRegression(C=1,
                                                        solver='lbfgs',
-                                                       max_iter=1000))) # asking LDA to store covariance
+                                                       max_iter=1000))) 
     time_decod = SlidingEstimator(clf)
     
     scores = {}
