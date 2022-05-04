@@ -211,7 +211,7 @@ for sub in np.arange(0  ,18):
     clf = make_pipeline(StandardScaler(),  # z-score normalization
                         SelectKBest(f_classif, k='all'),  # it's not the whole brain so I think we are fine using them all
                         LinearModel(LogisticRegression(C=1,
-                                                       solver='liblinear'))) # asking LDA to store covariance
+                                                       solver='lbfgs's))) # asking LDA to store covariance
     time_decod = SlidingEstimator(clf)
     
     # just use subt instead of trials_semK if you want to have average of trials
