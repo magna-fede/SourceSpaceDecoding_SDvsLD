@@ -13,59 +13,54 @@
 import numpy as np
 import pandas as pd
 import pickle
-import random
-from itertools import combinations
+
 
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.feature_selection import SelectKBest, f_classif
 from sklearn.linear_model import LogisticRegression
 from sklearn.utils import shuffle
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 
-
-from mne.decoding import (cross_val_multiscore, LinearModel, SlidingEstimator,
-                          get_coef)
+from mne.decoding import (cross_val_multiscore, LinearModel, SlidingEstimator)
 
 def chunks(l, n):
     """Yield successive n-sized chunks from l."""
     for i in range(0, len(l), n):
         yield l[i:i + n]
-
-def trials_no_category(row):
-    """Change number of trials when ignoring category.
-    Adding 100 for each category so that each hundreds correspond to a category."""
-    if row['category'] == 'visual':
-        pass
-    elif row['category'] == 'hand':
-        row['trial'] = row['trial'] + 100
-    elif row['category'] == 'hear':
-        row['trial'] = row['trial'] + 200
-    elif row['category'] == 'neutral':
-        row['trial'] = row['trial'] + 300
-    elif row['category'] =='emotional':
-        row['trial'] = row['trial'] + 400
-    
-    return row
-
-def divide_semK(trials):
+        
+def divide_semK_ROI(trials):
     dic = {}
     for semK in kk2:
-        dic[semK] = []
+        dic[semK] = dict.fromkeys(kkROI)
+        for i in dic[semK].keys():
+            dic[semK][i] = []
         for trial in trials['trial'][trials['category']==semK].unique():
-            dic[semK].append(np.concatenate \
+            for roi in kkROI:
+                dic[semK][roi].append(np.concatenate \
                               (trials['data'] \
                                [(trials['category']==semK) \
-                                & (trials['trial']==trial)].values)) 
-        dic[semK] = np.array(dic[semK])
+                                & (trials['trial']==trial) \
+                                & (trials['ROI']==roi)].values) )
+        for roi in kkROI:
+            dic[semK][roi] = np.array(dic[semK][roi])
+        
     return dic
 
+kk2 = ['visual', 'hand', 'hear', 'neutral','emotional']
+kkROI = ['lATL', 'rATL', 'AG', 'PTC', 'IFG', 'PVA']
 
-# SDLD_scores = []
-SDLD_coefficients = []
-SDLD2_coefficients = []
+# initialise dictionaries and lists for storing scores
+scores = {}
+scores['ld'] = dict.fromkeys(kkROI)
+scores['mlk'] = dict.fromkeys(kkROI)
+scores['frt'] = dict.fromkeys(kkROI)
+scores['odr'] = dict.fromkeys(kkROI)
 
-for sub in np.arange(0  ,18):
+for task in scores.keys():
+    for roi in scores[task].keys():
+        scores[task][roi] = []
+        
+for sub in np.arange(0, 18):
     print(f"Analysing subject {sub}")
     # import the dataset containing 120 categories (6 ROIs * 4 tasks *5 categories)
     # each key contains an array with size (number of trials * number of vertices * time points)
@@ -83,10 +78,7 @@ for sub in np.arange(0  ,18):
     
     # As we can observe, the words belong to different semantic categories (kk2).
     # In this project we will ignore it, and consider them just as different trials
-    # belonging either to the LD or milk task. 
-    
-    kk2 = ['visual', 'hand', 'hear', 'neutral','emotional']
-    kkROI = ['lATL', 'rATL', 'AG', 'PTC', 'IFG', 'PVA']
+    # belonging either to the LD or milk task.
     
     
     # The data we are working on, are not in a format useful for decoding, 
@@ -101,7 +93,6 @@ for sub in np.arange(0  ,18):
     trials_frt = pd.DataFrame(columns=['ROI','category','trial','data'])
     trials_odr = pd.DataFrame(columns=['ROI','category','trial','data'])
 
-    
     # comments just on the first section, as it's doing the same job for each
     # task, category, and ROI
     for j,k in enumerate(kk):
@@ -163,128 +154,81 @@ for sub in np.arange(0  ,18):
                 trials_odr = trials_odr.append(row, ignore_index=True) 
     # We now ignore the information about the categories and consider them just as different trials
 
+    trials = {}
+    trials['ld'] = trials_ld
+    trials['mlk'] = trials_mlk
+    trials['frt'] = trials_frt
+    trials['odr'] = trials_odr
     
-    mlks = divide_semK(trials_mlk)
-    frts = divide_semK(trials_frt)
-    odrs = divide_semK(trials_odr)
-    lds = divide_semK(trials_ld)
+    trials_semK = {}
+    
+    for tsk in list(trials.keys()):
+        trials_semK[tsk] = divide_semK_ROI(trials[tsk])
         
-    # now let's average 4 trials together
-    sub_lds = {}
-    sub_frts = {}
-    sub_mlks = {}
-    sub_odrs = {}
+    # try not averaging because not enough trials otherwise
     
-    for dic in [sub_lds, sub_frts, sub_mlks, sub_odrs]:
-        for semK in kk2:
-            dic[semK] = []
+    ### now let's average 3 trials together
+    # initialise dict
+    trials_avg3 = dict.fromkeys(trials_semK.keys())
     
-    for i,tsk in enumerate([lds,frts,mlks,odrs]):
-     
-        # make sure the number of trials is a multiple of 4, or eliminate excess
-        for k in tsk.keys():
+    for task in trials_avg3.keys():
+        trials_avg3[task] = dict.fromkeys(kk2)
+        for semK in trials_avg3[task].keys():
+            trials_avg3[task][semK] = dict.fromkeys(kkROI)
+            for roi in trials_avg3[task][semK].keys():
+                trials_avg3[task][semK][roi] = []
             
-            while len(tsk[k])%4 != 0:
-                tsk[k] = np.delete(tsk[k], len(tsk[k])-1, 0)
-        # create random groups of trials
-            new_tsk = np.split(tsk[k],len(tsk[k])/4)
-            new_trials = []
-        # calculate average for each timepoint of the 4 trials
-            for nt in new_tsk:
-                new_trials.append(np.mean(nt,0))
-            # assign group it in the corresponding task
-            
-            if i==0:
-                sub_lds[k] = new_trials
-            elif i==1:
-                sub_frts[k] = new_trials
-            elif i==2:
-                sub_mlks[k] = new_trials
-            elif i==3:
-                sub_odrs[k] = new_trials
-            
-    
+    # loop over tasks   
+    for task in trials_semK.keys():
+        for semK in trials_semK[task].keys():
+        # drop trials until we reach a multiple of 3
+        # (this is so that we always average 3 trials together)
+            for roi in trials_semK[task][semK].keys():
+                while len(trials_semK[task][semK][roi])%3 != 0:
+                    trials_semK[task][semK][roi] = np.delete(trials_semK[task][semK][roi], len(trials_semK[task][semK][roi])-1, 0)
+                # split data in groups of 3 trials
+                new_tsk = np.vsplit(trials_semK[task][semK][roi], len(trials_semK[task][semK][roi])/3)
+                new_trials = []
+                # calculate average for each timepoint (axis=0) of the 3 trials
+                for nt in new_tsk:
+                    new_trials.append(np.mean(np.array(nt),0))
+                # assign group to the corresponding task in the dict
+                # each is 3D array n_trial*n_vertices*n_timepoints
+                trials_avg3[task][semK][roi] = np.array(new_trials)
+                   
     # We create and run the model. We expect the model to perform at chance before the presentation of the stimuli (no ROI should be sensitive to task/semantics demands before the presentation of a word).
     
     # prepare a series of classifier applied at each time sample
     clf = make_pipeline(StandardScaler(),  # z-score normalization
                         SelectKBest(f_classif, k='all'),  # it's not the whole brain so I think we are fine using them all
-                        LinearDiscriminantAnalysis(solver="svd",
-                                                   store_covariance=True)) # asking LDA to store covariance
-    time_decod = SlidingEstimator(clf, scoring='roc_auc')
-        
-    comb = []
+                        LinearModel(LogisticRegression(C=1,
+                                                       solver='lbfgs',
+                                                       max_iter=1000))) 
+    time_decod = SlidingEstimator(clf, scoring='roc_auc_ovr')
     
-    for i in combinations(kk2,2):
-        comb.append(i)
-    
-    scores_mlks = []
-    
-    for semKvsemK in comb:
-        X_mlk = np.concatenate([mlks[semKvsemK[0]], mlks[semKvsemK[1]]])
-        y_mlk = np.array([semKvsemK[0]]*len(mlks[semKvsemK[0]]) + [semKvsemK[1]]*len(mlks[semKvsemK[1]]))
-        X_mlk, y_mlk = shuffle(X_mlk, y_mlk, random_state=0)
-        scores_mlks.append(cross_val_multiscore(time_decod, X_mlk, y_mlk, cv=5))
  
-    mlks_avg = []
-    for score in scores_mlks:
-        mlks_avg.append(np.mean(score,axis=0)) 
+    # just use subt instead of trials_semK if you want to have average of trials
+    for task in trials_avg3.keys():
+        for roi in kkROI:
+            X = []
+            y = []
+            for semK in kk2:
+                X.append(trials_avg3[task][semK][roi])
+                y.extend([semK]*len(trials_avg3[task][semK][roi]))
+            X = np.concatenate(X)
+            y = np.array(y)
 
-    scores_lds = []
-    
-    for semKvsemK in comb:
-        X_ld = np.concatenate([lds[semKvsemK[0]], lds[semKvsemK[1]]])
-        y_ld = np.array([semKvsemK[0]]*len(lds[semKvsemK[0]]) + [semKvsemK[1]]*len(lds[semKvsemK[1]]))
-        X_ld, y_ld = shuffle(X_ld, y_ld, random_state=0)
-        scores_lds.append(cross_val_multiscore(time_decod, X_ld, y_ld, cv=5))
+            X, y = shuffle(X, y, random_state=0)
+            
+            scores[task][roi].append(cross_val_multiscore(time_decod,
+                                                     X, y, cv=5).mean(axis=0))
         
-    lds_avg = []
-    for score in scores_lds:
-         lds_avg.append(np.mean(score,axis=0))
-         
-    scores_frts = []
-    
-    for semKvsemK in comb:
-        X_frt = np.concatenate([frts[semKvsemK[0]], frts[semKvsemK[1]]])
-        y_frt = np.array([semKvsemK[0]]*len(frts[semKvsemK[0]]) + [semKvsemK[1]]*len(frts[semKvsemK[1]]))
-        X_frt, y_frt = shuffle(X_frt, y_frt, random_state=0)
-        scores_frts.append(cross_val_multiscore(time_decod, X_frt, y_frt, cv=5))
-
-    frts_avg = []
-    for score in scores_frts:
-        frts_avg.append(np.mean(score,axis=0))
-
-    scores_odrs = []
-    
-    for semKvsemK in comb:
-        X_odr = np.concatenate([odrs[semKvsemK[0]], odrs[semKvsemK[1]]])
-        y_odr = np.array([semKvsemK[0]]*len(odrs[semKvsemK[0]]) + [semKvsemK[1]]*len(odrs[semKvsemK[1]]))
-        X_odr, y_odr = shuffle(X_odr, y_odr, random_state=0)
-        scores_odrs.append(cross_val_multiscore(time_decod, X_odr, y_odr, cv=5))
-
-    odrs_avg = []
-    for score in scores_odrs:
-        odrs_avg.append(np.mean(score,axis=0))
-    
-
-
-
-
-# df_to_export = pd.DataFrame(SDLD_scores)
-# with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1104_LDA_SDLD_scores.P",
-#           'wb') as outfile:
-#     pickle.dump(df_to_export,outfile)
-    
-df_to_export = pd.DataFrame(SDLD_coefficients)
-with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1104_LDA_SDLD_coefficients.P",
+            
+# save the scores ...
+df_to_export = pd.DataFrame(scores)
+with open("//cbsu/data/Imaging/hauk/users/fm02/final_dTtT/individual_ROIs/SemCat/scores.P",
           'wb') as outfile:
     pickle.dump(df_to_export,outfile)
-  
-df_to_export = pd.DataFrame(SDLD2_coefficients)
-with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/1104_LDA_SDLD-long_coefficients.P",
-          'wb') as outfile:
-    pickle.dump(df_to_export,outfile)
-
+    
     
 
- 
