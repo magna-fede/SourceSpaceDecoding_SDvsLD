@@ -125,7 +125,7 @@ for roi in kkROI:
         plt.axvspan(times[start], times[stop], alpha=0.2,
                     label="uncorrected p<.05",
                     color="yellow")    
-    plt.title(f'Flipped LD vs SD - {roi}')
+    plt.title(f'LD vs SD - {roi}')
     handles, labels = plt.gca().get_legend_handles_labels()
     by_label = dict(zip(labels, handles))
     plt.legend(by_label.values(), by_label.keys())
@@ -185,7 +185,7 @@ for roi in kkROI:
         plt.axvspan(times[start], times[stop], alpha=0.2,
                     label="uncorrected p<.05",
                     color="yellow")    
-    plt.title(f'Flipped SD vs SD - {roi}')
+    plt.title(f'Average SD vs SD - {roi}')
     handles, labels = plt.gca().get_legend_handles_labels()
     by_label = dict(zip(labels, handles))
     plt.legend(by_label.values(), by_label.keys())
@@ -205,7 +205,7 @@ for roi in kkROI:
         i+=1
     plt.axvline(0, color='k');
     plt.axhline(0, color='k', alpha=0.3, linewidth = 0.5);
-    plt.title(f"Flipped evoked response {roi}")
+    plt.title(f"Average evoked response {roi}")
     handles, labels = plt.gca().get_legend_handles_labels()
     by_label = dict(zip(labels, handles))
     plt.legend(by_label.values(), by_label.keys())
