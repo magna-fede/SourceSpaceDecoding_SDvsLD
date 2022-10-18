@@ -92,7 +92,7 @@ plt.axvline(0, color='k');
 plt.title('LD vs average(SD) Decoding ROC AUC')
 plt.axhline(.5, color='k', linestyle='--', label='chance');
 plt.legend();
-plt.savefig('//cbsu/data/Imaging/hauk/users/fm02/final_dTtT/combined_ROIs/LDvsSD/Figures/average_LDvsSD_accuracy.png', format='png')
+#plt.savefig('//cbsu/data/Imaging/hauk/users/fm02/final_dTtT/combined_ROIs/LDvsSD/Figures/average_LDvsSD_accuracy.png', format='png')
 plt.show();
 
 patterns_roi = dict.fromkeys(kkROI)

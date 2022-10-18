@@ -34,6 +34,14 @@ with open("/imaging/hauk/users/fm02/first_output/evoked_responses/0804_evoked_fl
 # # # with open("//cbsu/data/Imaging/hauk/users/fm02/first_output/evoked_responses/0722_evoked_RMSacrossROI.P", 'rb') as f:
 # # #       evoked = pickle.load(f)      
 
+sns.set(rc={"figure.dpi":300, 'savefig.dpi':300})
+
+sns.set_theme(context="notebook",
+              style="white",
+              font="sans-serif")
+
+sns.set_style("ticks")
+
 colors = sns.color_palette(['#FFBE0B',
                             '#FB5607',
                             '#FF006E',
@@ -216,9 +224,10 @@ for roi in kkROI:
         i+=1
     plt.axvline(0, color='k');
     plt.axhline(0, color='k', alpha=0.3, linewidth = 0.5);
-    plt.title(f"Flipped evoked response {roi}")
+    plt.title(f"Evoked response in {roi}")
     handles, labels = plt.gca().get_legend_handles_labels()
     by_label = dict(zip(labels, handles))
     plt.legend(by_label.values(), by_label.keys())
+    plt.tight_layout()
     plt.savefig(f'/imaging/hauk/users/fm02/final_dTtT/evoked/flip_avg/flipped evoked_{roi}.png', format='png')    
     plt.show()
