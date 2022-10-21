@@ -15,9 +15,15 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from scipy.stats import sem
 
-kkROI = ['lATL', 'rATL', 'AG', 'PTC', 'IFG', 'PVA']
+sns.set(rc={"figure.dpi":300, 'savefig.dpi':300})
 
-with open("//cbsu/data/Imaging/hauk/users/fm02/final_dTtT/individual_ROIs/LDvsSD/scores.P" , 'rb') as f:
+sns.set_theme(context="notebook",
+              style="white",
+              font="sans-serif")
+
+sns.set_style("ticks")
+
+with open("/imaging/hauk/users/fm02/final_dTtT/individual_ROIs/LDvsSD/scores.P" , 'rb') as f:
     scores = pickle.load(f)
 
 # # create times array
@@ -74,8 +80,8 @@ for task in scores.keys():
         i += 1
     # plot some line that are useful for inspection
     plt.axvline(0, color='k');
-    plt.title(f'LD vs {task} Decoding ROC AUC')
-    plt.axhline(.5, color='k', linestyle='--', label='chance');
+    #plt.title(f'LD vs {task} Decoding ROC AUC')
+    plt.axhline(.5, color='k', linestyle='--');
     plt.legend();
-    plt.savefig(f'//cbsu/data/Imaging/hauk/users/fm02/final_dTtT/combined_ROIs/LDvsSD/Figures/{task}_LDvs_accuracy.png', format='png')
+    #plt.savefig(f'//cbsu/data/Imaging/hauk/users/fm02/final_dTtT/combined_ROIs/LDvsSD/Figures/{task}_LDvs_accuracy.png', format='png')
     plt.show();

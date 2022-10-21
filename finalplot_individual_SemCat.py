@@ -19,8 +19,11 @@ from mne.stats import permutation_cluster_1samp_test
 
 kkROI = ['lATL', 'rATL', 'AG', 'PTC', 'IFG', 'PVA']
 
-with open("//cbsu/data/Imaging/hauk/users/fm02/final_dTtT/individual_ROIs/SemCat/scores.P" , 'rb') as f:
-    scores = pickle.load(f)
+scores = []
+
+for i in range(0, 18):
+    with open(f"//imaging/hauk/users/fm02/final_dTtT/individual_ROIs/SemCat/{i}_scores_concat.P" , 'rb') as f:
+        scores.append(pickle.load(f))
 
 # # create times array
 times = np.arange(-300,900,4)
@@ -33,10 +36,21 @@ colors = sns.color_palette(['#FFBE0B',
                             '#1D437F'
                             ])
 
-for task in scores.keys():
-    for roi in scores[task].keys():
-        scores[task][roi] = np.array(scores[task][roi])
-        
+reorg = dict.fromkeys(['ld', 'sd'])
+
+reorg['ld'] = []
+reorg['sd'] = []
+
+for sub_score in scores:
+    reorg['ld'].append(sub_score['ld'])
+    reorg['sd'].append(sub_score['sd'])
+    
+del(scores)
+scores = dict.fromkeys(reorg.keys())
+for task in reorg:
+    scores[task] = pd.DataFrame(reorg[task], index=range(0,18))
+    
+del(reorg)
 
 p_clust = {}
 t_clust = {}

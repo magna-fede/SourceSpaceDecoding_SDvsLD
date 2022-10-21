@@ -31,8 +31,18 @@ job_list = [
     #  'Ss':  list(range(0, 18)),                    # subject indices
     #  'mem': '4G',                   # memory for qsub process
     # },
-    {'N':   'semcat_conc_timegen',                  # job name
-     'Py':  'concat_individual_SemCat_TempGen',  # Python script
+    # {'N':   'semcat_conc_timegen',                  # job name
+    #  'Py':  'concat_individual_SemCat_TempGen',  # Python script
+    #  'Ss':  list(range(0, 18)),                    # subject indices
+    #  'mem': '4G',                   # memory for qsub process
+    # },
+    # {'N':   'semcat_conc_patterns',                  # job name
+    #  'Py':  'final_combined_SemCat_concat',  # Python script
+    #  'Ss':  list(range(0, 18)),                    # subject indices
+    #  'mem': '4G',                   # memory for qsub process
+    # },
+    {'N':   'semcat_NONconc_patterns',                  # job name
+     'Py':  'final_combined_SemCat_slurm',  # Python script
      'Ss':  list(range(0, 18)),                    # subject indices
      'mem': '4G',                   # memory for qsub process
     },

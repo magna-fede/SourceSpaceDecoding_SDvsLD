@@ -60,7 +60,17 @@ for task in scores.keys():
     for roi in scores[task].keys():
         scores[task][roi] = []
         
-for sub in np.arange(0, 18):
+def individual_semcat_concat(sub):
+    kk2 = ['visual', 'hand', 'hear', 'neutral','emotional']
+    kkROI = ['lATL', 'rATL', 'AG', 'PTC', 'IFG', 'PVA']
+    
+    # initialise dictionaries and lists for storing scores
+    scores = {}
+    scores['ld'] = dict.fromkeys(kkROI)
+    scores['sd'] = dict.fromkeys(kkROI)
+    scores['frt'] = dict.fromkeys(kkROI)
+    scores['odr'] = dict.fromkeys(kkROI)
+
     print(f"Analysing subject {sub}")
     # import the dataset containing 120 categories (6 ROIs * 4 tasks *5 categories)
     # each key contains an array with size (number of trials * number of vertices * time points)

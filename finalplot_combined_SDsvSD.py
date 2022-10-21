@@ -15,6 +15,24 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from scipy.stats import sem
 
+sns.set(rc={"figure.dpi":300, 'savefig.dpi':300})
+
+sns.set_theme(context="notebook",
+              style="white",
+              font="sans-serif")
+
+sns.set_style("ticks")
+
+colors = sns.color_palette(["#FFBE0B",
+                            "#FB5607",
+                            "#FF006E",
+                            "#8338EC",
+                            "#3A86FF",
+                            "#1D437F"
+                            ])
+
+kkROI = ["lATL", "rATL", "AG", "PTC", "IFG", "PVA"]
+
 
 def rms(example):
     """Compute root mean square of each ROI.
@@ -32,10 +50,10 @@ def rms(example):
 # 
 kkROI = ['lATL', 'rATL', 'AG', 'PTC', 'IFG', 'PVA']
 
-with open("//cbsu/data/Imaging/hauk/users/fm02/final_dTtT/combined_ROIs/SDvsSD/scores.P" , 'rb') as f:
+with open("/imaging/hauk/users/fm02/final_dTtT/combined_ROIs/SDvsSD/scores.P" , 'rb') as f:
     scores = pickle.load(f)
 
-with open("//cbsu/data/Imaging/hauk/users/fm02/final_dTtT/combined_ROIs/SDvsSD/patterns.P" , 'rb') as f:
+with open("/imaging/hauk/users/fm02/final_dTtT/combined_ROIs/SDvsSD/patterns.P" , 'rb') as f:
     patterns = pickle.load(f)
 
 # # create times array
@@ -60,17 +78,17 @@ colors = sns.color_palette(['#FFBE0B',
 # '#ffffff'
 
 i = 4
-sns.lineplot(x=times, y=np.array(scores).mean(axis=0), color=colors[i])
+sns.lineplot(x=times, y=np.array(scores).mean(axis=0), color='k')
 # plot the standard error of the mean
 plt.fill_between(x=times, \
                   y1=(np.array(scores).mean(axis=0)) - sem(np.array(scores),0), \
                   y2=(np.array(scores).mean(axis=0)) + sem(np.array(scores),0), \
-                  color=colors[i], alpha=.1)
+                  color='k', alpha=.1)
 plt.axvline(0, color='k');
-plt.title('SDvsSD Decoding ROC AUC')
+#plt.title('SDvsSD Decoding ROC AUC')
 plt.axhline(.5, color='k', linestyle='--', label='chance');
-plt.legend();
-plt.savefig('//cbsu/data/Imaging/hauk/users/fm02/final_dTtT/combined_ROIs/SDvsSD/Figures/SDvsSD_accuracy.png', format='png')
+#plt.legend();
+#plt.savefig('//cbsu/data/Imaging/hauk/users/fm02/final_dTtT/combined_ROIs/SDvsSD/Figures/SDvsSD_accuracy.png', format='png')
 plt.show();
 
 patterns_roi = dict.fromkeys(kkROI)
@@ -107,7 +125,7 @@ for roi in patterns_roi.keys():
     sns.lineplot(x=times, y=np.array(patterns_roi[roi]['avg']).mean(axis=0), color=colors[i]) # this takes mean over participants
     i += 1
 plt.axvline(0, color='k');
-plt.title('SDvsSD RMS patterns')
-plt.legend(patterns_roi.keys());
-plt.savefig('//cbsu/data/Imaging/hauk/users/fm02/final_dTtT/combined_ROIs/SDvsSD/Figures/SDvsSD_patterns.png', format='png')
+#plt.title('SDvsSD RMS patterns')
+plt.legend(patterns_roi.keys(), loc='upper left');
+#plt.savefig('//cbsu/data/Imaging/hauk/users/fm02/final_dTtT/combined_ROIs/SDvsSD/Figures/SDvsSD_patterns.png', format='png')
 plt.show();

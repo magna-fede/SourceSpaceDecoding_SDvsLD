@@ -15,6 +15,14 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from scipy.stats import sem
 
+sns.set(rc={"figure.dpi":300, 'savefig.dpi':300})
+sns.set_theme(context="notebook",
+              style="white",
+              font="sans-serif")
+
+sns.set_style("ticks")
+
+kkROI = ["lATL", "rATL", "AG", "PTC", "IFG", "PVA"]
 
 def rms(example):
     """Compute root mean square of each ROI.
@@ -32,10 +40,10 @@ def rms(example):
 # 
 kkROI = ['lATL', 'rATL', 'AG', 'PTC', 'IFG', 'PVA']
 
-with open("//cbsu/data/Imaging/hauk/users/fm02/final_dTtT/combined_ROIs/LDvsSD/scores.P" , 'rb') as f:
+with open("/imaging/hauk/users/fm02/final_dTtT/combined_ROIs/LDvsSD/scores.P" , 'rb') as f:
     scores = pickle.load(f)
 
-with open("//cbsu/data/Imaging/hauk/users/fm02/final_dTtT/combined_ROIs/LDvsSD/patterns.P" , 'rb') as f:
+with open("/imaging/hauk/users/fm02/final_dTtT/combined_ROIs/LDvsSD/patterns.P" , 'rb') as f:
     patterns = pickle.load(f)
 
 # # create times array
@@ -131,5 +139,14 @@ for roi in patterns_roi.keys():
 plt.axvline(0, color='k');
 plt.title('LD vs average(SD) RMS patterns')
 plt.legend(patterns_roi.keys());
-plt.savefig('//cbsu/data/Imaging/hauk/users/fm02/final_dTtT/combined_ROIs/LDvsSD/Figures/average_LDvsSD_patterns.png', format='png')
+plt.savefig('/imaging/hauk/users/fm02/final_dTtT/combined_ROIs/LDvsSD/Figures/average_LDvsSD_patterns.png', format='png')
 plt.show();
+
+sns.lineplot(x=times, y=np.stack(scores['avg'].mean(axis=0)), color='black')
+plt.fill_between(x=times, \
+                      y1=(np.mean(np.stack(scores['avg']),0)-sem(np.stack(scores['avg']),0)), \
+                      y2=(np.mean(np.stack(scores['avg']),0)+sem(np.stack(scores['avg']),0)), \
+                      color='k', alpha=.1)
+plt.title(f'LD vs average(SD) Decoding ROC AUC')
+plt.axvline(0, color='k')
+plt.axhline(.5, color='k', linestyle='--');

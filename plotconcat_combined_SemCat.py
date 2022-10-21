@@ -14,6 +14,15 @@ from scipy.stats import sem
 from scipy import stats
 from mne.stats import permutation_cluster_1samp_test
 
+sns.set(rc={"figure.dpi":300, 'savefig.dpi':300})
+
+sns.set_theme(context="notebook",
+              style="white",
+              font="sans-serif")
+
+sns.set_style("ticks")
+
+
 kkROI = ['lATL', 'rATL', 'AG', 'PTC', 'IFG', 'PVA']
 kk2 = ['visual', 'hand', 'hear', 'neutral', 'emotional']
 
@@ -30,11 +39,15 @@ def rms(example):
     
     return rms_example 
 
-with open("//cbsu/data/Imaging/hauk/users/fm02/final_dTtT/combined_ROIs/SemCat/scores.P" , 'rb') as f:
-    scores = pickle.load(f)
+scores = []
+for i in range(0, 18):
+    with open(f"/imaging/hauk/users/fm02/final_dTtT/combined_ROIs/SemCat/scores_concat_{i}.P" , 'rb') as f:
+        scores.append(pickle.load(f))
 
-with open("//cbsu/data/Imaging/hauk/users/fm02/final_dTtT/combined_ROIs/SemCat/patterns.P" , 'rb') as f:
-    patterns = pickle.load(f)
+patterns = []
+for i in range(0, 18):
+    with open(f"/imaging/hauk/users/fm02/final_dTtT/combined_ROIs/SemCat/patterns_concat_{i}.P" , 'rb') as f:
+        patterns.append(pickle.load(f))
 
 # # create times array
 times = np.arange(-300,900,4)
@@ -57,17 +70,35 @@ colors = sns.color_palette(['#FFBE0B',
 # '#000000'
 # '#ffffff'
 
-for task in scores.keys():
-    scores[task] = np.array(scores[task])
-        
-# initialise average(scores) key
-scores['avg'] = [ [] for _ in range(len(scores)) ]
 
-# calcualte average performance for each participant, across tasks
-for i in range(0, 18):
-    scores['avg'].loc[i] = np.array([scores['mlk'][i],
-                              scores['frt'][i],
-                              scores['odr'][i]]).mean(axis=0)
+reorg = dict.fromkeys(["ld", "sd"])
+
+reorg["ld"] = []
+reorg["sd"] = []
+
+for sub_score in scores:
+    reorg["ld"].append(sub_score["ld"])
+    reorg["sd"].append(sub_score["sd"])
+    
+del(scores)
+scores = dict.fromkeys(reorg.keys())
+for task in reorg:
+    scores[task] = pd.DataFrame(reorg[task], index=range(0,18))
+
+
+reorg = dict.fromkeys(["ld", "sd"])
+
+reorg["ld"] = []
+reorg["sd"] = []
+
+for sub_score in patterns:
+    reorg["ld"].append(sub_score["ld"])
+    reorg["sd"].append(sub_score["sd"])
+    
+patterns = dict.fromkeys(reorg.keys())
+for task in reorg:
+    patterns[task] = reorg[task]
+
 
 p_clust = {}
 t_clust = {}
@@ -124,7 +155,7 @@ for task in ['ld', 'avg']:
         plt.axvspan(times[start], times[stop], alpha=0.2,
                     label="uncorrected p<.05",
                     color="yellow")    
-    plt.title(f'{task} Semantic Category Decoding ROC AUC')
+    #plt.title(f'{task} Semantic Category Decoding ROC AUC')
     plt.axhline(.5, color='k', linestyle='--', label='chance');
     #plt.savefig(f'//cbsu/data/Imaging/hauk/users/fm02/final_dTtT/combined_ROIs/SemCat/Figures/{task}_accuracy.png', format='png');
     # plt.legend();
@@ -134,7 +165,7 @@ for task in ['ld', 'avg']:
 patterns_roi = dict.fromkeys(kkROI)
 
 for roi in patterns_roi.keys():
-    patterns_roi[roi] = dict.fromkeys(['ld','frt', 'mlk', 'odr'])
+    patterns_roi[roi] = dict.fromkeys(['ld', 'sd'])
     for task in patterns_roi[roi].keys():
         patterns_roi[roi][task] = []
 
@@ -145,31 +176,21 @@ for i in range(18):
     for roi in patterns_roi.keys():
         # loop over each task
         for task in patterns_roi[roi].keys():
-            cat = []
-            for category in kk2:
-                cat.append(rms(np.array(patterns[task][i][category].loc[roi])))
-            patterns_roi[roi][task].append(np.stack(cat).mean(axis=0))
-
-for roi in patterns_roi.keys():
-    patterns_roi[roi]['avg'] = []
+            cat = rms(np.array(patterns[task][i].loc[roi]))
+            patterns_roi[roi][task].append(np.stack(cat))
 
 # calculate the average of the RMS(pattern) across each task
 
 # loop over participants    
-for i in range(18):
-    # loop over each roi
-    for roi in patterns_roi.keys():
-        patterns_roi[roi]['avg'].append(np.array([patterns_roi[roi]['mlk'][i],
-                                 patterns_roi[roi]['frt'][i],
-                                 patterns_roi[roi]['odr'][i]]).mean(axis=0))    
+ 
 
 i = 0
 for roi in patterns_roi.keys():
-    sns.lineplot(x=times, y=np.array(patterns_roi[roi]['avg']).mean(axis=0), color=colors[i]) # this takes mean over participants
+    sns.lineplot(x=times, y=np.array(patterns_roi[roi]['sd']).mean(axis=0), color=colors[i]) # this takes mean over participants
     i += 1
 plt.axvline(0, color='k');
 #plt.title('average SD RMS patterns')
-#plt.legend(patterns_roi.keys());
+plt.legend(patterns_roi.keys(), loc='upper left');
 #plt.savefig('//cbsu/data/Imaging/hauk/users/fm02/final_dTtT/combined_ROIs/SDvsSD/Figures/SDvsSD_patterns.png', format='png')
 plt.show();
 
@@ -179,6 +200,6 @@ for roi in patterns_roi.keys():
     i += 1
 plt.axvline(0, color='k');
 plt.title('LD RMS patterns')
-plt.legend(patterns_roi.keys());
+plt.legend(patterns_roi.keys(), loc= 'upper left');
 #plt.savefig('//cbsu/data/Imaging/hauk/users/fm02/final_dTtT/combined_ROIs/SDvsSD/Figures/SDvsSD_patterns.png', format='png')
 plt.show();

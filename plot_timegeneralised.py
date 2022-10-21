@@ -22,6 +22,7 @@ import sys
 
 data_semcat = dict()
 data_sdld = dict()
+data_semconc = dict()
 
 for i in range(0, 18):
     with open(f"/imaging/hauk/users/fm02/final_dTtT/individual_ROIs/SemCat/scores_TimeGen_{i}_LG.P", "rb") as sbj_data:
@@ -31,31 +32,45 @@ for i in range(0, 18):
     with open(f"/imaging/hauk/users/fm02/final_dTtT/individual_ROIs/LDvsSD/scores_TimeGen_{i}_LG.P", "rb") as sbj_data:
         data_sdld[i] = pickle.load(sbj_data)
 
+
+for i in range(0,18):
+    with open(f"/imaging/hauk/users/fm02/final_dTtT/individual_ROIs/SemCat/scores_concat_TimeGen_{i}_LG.P", "rb") as sbj_data:
+        data_semconc[i] = pickle.load(sbj_data)
+        
 times = np.arange(-300,900,4)
 
 SD_mats = dict.fromkeys(kkROI)
 
-value = input("Do you want semcat or sdld? \n")
+value = input("Do you want semcat (old), semconc (new) or sdld? \n")
 
 if value=='semcat':
     data = data_semcat
 elif value=='sdld':
     data = data_sdld
+elif value=='semconc':
+    data = data_semconc
 
 for roi in SD_mats.keys():
     SD_mats[roi] = list()
 
-for i in range(0, 18):
-    for roi in kkROI:
-        SD_mats[roi].append(np.array([data[i]['mlk'][roi],
+if 'mlk' in data[i].keys():
+    for i in range(0, 18):
+        for roi in kkROI:
+            SD_mats[roi].append(np.array([data[i]['mlk'][roi],
                           data[i]['frt'][roi],
                           data[i]['odr'][roi]]).mean(axis=0))
+else:
+    for i in range(0, 18):
+        for roi in kkROI:
+            SD_mats[roi].append(np.array(data[i]['sd'][roi]))
+                    
 
 SD_mean = dict.fromkeys(kkROI)
 
 vmax = dict()
 vmax['semcat'] = 0.6
 vmax['sdld'] = 0.9
+vmax['semconc'] = 0.6
 
 for roi in kkROI:
     SD_mean[roi] = np.array(SD_mats[roi]).mean(axis=0)
