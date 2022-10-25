@@ -50,7 +50,7 @@ scores = {}
 scores['ld'] = dict.fromkeys(kkROI)
 scores['sd'] = dict.fromkeys(kkROI)
 
-def individual_semcat_concat(sub):
+def individual_confusion_matrix(sub):
 
     print(f"Analysing subject {sub}")
     # import the dataset containing 120 categories (6 ROIs * 4 tasks *5 categories)
@@ -214,7 +214,7 @@ def individual_semcat_concat(sub):
     conf_mat = dict.fromkeys(['sd', 'ld'])
     for task in conf_mat.keys():
         conf_mat[task] = dict.fromkeys(kkROI)
-        for roi in vonf_mat[task].keys():
+        for roi in conf_mat[task].keys():
             conf_mat[task][roi] = []
 
     for task in ['sd', 'ld']:
@@ -233,52 +233,17 @@ def individual_semcat_concat(sub):
             predicted = []
             
             for i in range(0, 300):
+                predicted.append(cross_val_predict(clf, X[:,:,i], y, cv=5))
 
             for i in range(0, 300):
-                conf_mat[task][roi].append(confusion_matrix(y, predicted[i], labels=kk2))
-    
-    
-    times = np.arange(-300,900,4)
-    
+                conf_mat[task][roi].append(confusion_matrix(y, predicted[i],
+                                                            labels=kk2,
+                                                            normalize='true'))
+                
+    with open(f"/imaging/hauk/users/fm02/final_dTtT/individual_ROIs/SemCat/confusion_matrix_{sub}.P",
+              'wb') as outfile:
+        pickle.dump(conf_mat,outfile)
 
-    
-    clusters = dict.fromkeys(kkROI)
-    clusters['lATL'] = [((int(np.where(times==236)[0])), \
-                         (int(np.where(times==504)[0]))), \
-                        ((int(np.where(times==588)[0])), \
-                         (int(np.where(times==652)[0])))]
-    clusters['lATL'] = [((int(np.where(times==264)[0])), \
-                             (int(np.where(times==488)[0])))]
-    clusters['AG'] = [((int(np.where(times==312)[0])), \
-                             (int(np.where(times==372)[0])))]
-    clusters['PTC'] = [((int(np.where(times==208)[0])), \
-                         (int(np.where(times==460)[0]))), \
-                        ((int(np.where(times==468)[0])), \
-                         (int(np.where(times==556)[0])))]
-    clusters['IFG'] = [((int(np.where(times==260)[0])), \
-                         (int(np.where(times==496)[0])))]
-    clusters['PVA'] = [((int(np.where(times==64)[0])), \
-                         (int(np.where(times==128)[0]))), \
-                        ((int(np.where(times==156)[0])), \
-                         (int(np.where(times==240)[0]))), \
-                        ((int(np.where(times==252)[0])), \
-                         (int(np.where(times==344)[0])))]
-    
-    for roi in kkROI:
-        for cluster in clusters[roi]:
-            get_clust = np.stack(conf_mat[task][roi][cluster[0]:cluster[1]], \
-                                 normalize='true').mean(axis=0) # normalize over true values
-                # for the true values check the proportions of each category
-    
-    ax=sns.heatmap(first_cluster,
-                annot=True,
-                xticklabels=kk2,
-                yticklabels=kk2,
-                cmap="viridis",)
-    ax.set(xlabel="True", ylabel="Predicted")
-    print(first_cluster)    
-    
-    #from sklearn.metrics import ConfusionMatrixDisplay
     
 # get all input arguments except first
 if len(sys.argv) == 1:
@@ -292,5 +257,5 @@ else:
 
 
 for ss in sbj_ids:
-    individual_semcat_concat(ss)    
+    individual_confusion_matrix(ss)    
 

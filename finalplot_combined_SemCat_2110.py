@@ -157,11 +157,11 @@ for task in p_clust.keys():
     print(f'{task}: Decoding semantic category at timepoints: \
           {times[np.where(p_clust[task] < 0.05)[0]]}')
 
-for task in ['ld', 'avg']:
-    sns.lineplot(x=times, y=np.mean(np.stack(scores[task]),0), color='k')
+for task in ['ld', 'SD']:
+    sns.lineplot(x=times, y=np.mean(scores[task],0), color='k')
     plt.fill_between(x=times, \
-                      y1=(np.mean(np.stack(scores[task]),0)-sem(np.stack(scores[task]),0)), \
-                      y2=(np.mean(np.stack(scores[task]),0)+sem(np.stack(scores[task]),0)), \
+                      y1=(np.mean(scores[task],0)-sem(scores[task],0)), \
+                      y2=(np.mean(scores[task],0)+sem(scores[task],0)), \
                       color='k', alpha=.1)
     plt.axvline(0, color='k');
     mask = p_clust[task] < 0.05
@@ -174,7 +174,7 @@ for task in ['ld', 'avg']:
                     label="Cluster based permutation p<.05",
                     color="green")
     # plt.legend();
-    mask = stats.ttest_1samp(np.stack(scores[task]), .5)[1] < 0.05
+    mask = stats.ttest_1samp(scores[task], .5)[1] < 0.05
     mask[0] = False
     first_vals = np.argwhere((~mask[:-1] & mask[1:]))  # Look for False-True transitions
     last_vals = np.argwhere((mask[:-1] & ~mask[1:])) + 1  # Look for True-False transitions
@@ -185,7 +185,7 @@ for task in ['ld', 'avg']:
                     color="yellow")    
     #plt.title(f'{task} Semantic Category Decoding ROC AUC')
     plt.axhline(.5, color='k', linestyle='--', label='chance');
-    #plt.savefig(f'//cbsu/data/Imaging/hauk/users/fm02/final_dTtT/combined_ROIs/SemCat/Figures/{task}_accuracy.png', format='png');
+    plt.savefig(f'//cbsu/data/Imaging/hauk/users/fm02/final_dTtT/combined_ROIs/SemCat/Figures/{task}_accuracy_2110.png', format='png');
     # plt.legend();
     plt.show();
         
@@ -237,7 +237,7 @@ for task in newp.keys():
         sns.lineplot(x=times, y=np.array(newp[task][roi]).mean(axis=0), color=colors[i]) # this takes mean over participants
         i += 1
     plt.axvline(0, color='k');
-    plt.title(f'{task} RMS patterns')
-    plt.legend(patterns_roi.keys());
-    #plt.savefig('//cbsu/data/Imaging/hauk/users/fm02/final_dTtT/combined_ROIs/SDvsSD/Figures/SDvsSD_patterns.png', format='png')
+    #plt.title(f'{task} RMS patterns')
+    plt.legend(newp[task].keys(), loc='upper left');
+    plt.savefig(f'/imaging/hauk/users/fm02/final_dTtT/combined_ROIs/SemCat/Figures/{task}_patterns_2110.png', format='png')
     plt.show();

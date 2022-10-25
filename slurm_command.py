@@ -41,8 +41,13 @@ job_list = [
     #  'Ss':  list(range(0, 18)),                    # subject indices
     #  'mem': '4G',                   # memory for qsub process
     # },
-    {'N':   'semcat_NONconc_patterns',                  # job name
-     'Py':  'final_combined_SemCat_slurm',  # Python script
+    # {'N':   'semcat_NONconc_patterns',                  # job name
+    #  'Py':  'final_combined_SemCat_slurm',  # Python script
+    #  'Ss':  list(range(0, 18)),                    # subject indices
+    #  'mem': '4G',                   # memory for qsub process
+    # },
+     {'N':   'semcat_confusion',                  # job name
+     'Py':  'concat_individual_SemCat_confusion-matrix_slurm',  # Python script
      'Ss':  list(range(0, 18)),                    # subject indices
      'mem': '4G',                   # memory for qsub process
     },
