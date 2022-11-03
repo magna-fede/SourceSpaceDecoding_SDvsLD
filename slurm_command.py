@@ -46,8 +46,43 @@ job_list = [
     #  'Ss':  list(range(0, 18)),                    # subject indices
     #  'mem': '4G',                   # memory for qsub process
     # },
-     {'N':   'semcat_confusion',                  # job name
-     'Py':  'concat_individual_SemCat_confusion-matrix_slurm',  # Python script
+    #  {'N':   'semcat_confusion',                  # job name
+    #  'Py':  'concat_individual_SemCat_confusion-matrix_slurm',  # Python script
+    #  'Ss':  list(range(0, 18)),                    # subject indices
+    #  'mem': '4G',                   # memory for qsub process
+    # },
+    # {'N':   'semcat_conc2',                  # job name
+    #  'Py':  'concat_individual_SemCat_concrete_slurm',  # Python script
+    #  'Ss':  list(range(0, 18)),                    # subject indices
+    #  'mem': '4G',                   # memory for qsub process
+    # },
+
+    # {'N':   'new_epochs',                  # job name
+    #  'Py':  'create_metadata',  # Python script
+    #  'Ss':  list(range(0, 18)),                    # subject indices
+    #  'mem': '4G',                   # memory for qsub process
+    # },
+    # {'N':   'mysources',                  # job name
+    #  'Py':  'source_estimates',  # Python script
+    #  'Ss':  list(range(0, 18)),                    # subject indices
+    #  'mem': '4G',                   # memory for qsub process
+    # },
+    # {'N':   'n_letters',                  # job name
+    #  'Py':  'mysources_individual_SemCat_confusion-matrix_slurm',  # Python script
+    #  'Ss':  list(range(0, 18)),                    # subject indices
+    #  'mem': '4G',                   # memory for qsub process
+    # },
+    # {'N':   'concVSabs',                  # job name
+    #  'Py':  'mysources_concavs_confusion-matrix_slurm',  # Python script
+    #  'Ss':  list(range(0, 18)),                    # subject indices
+    #  'mem': '4G'},                   # memory for qsub process
+    # {'N':   'concVSabs',                  # job name
+    #  'Py':  'mysources_concabs_balanced_confusion-matrix_slurm',  # Python script
+    #  'Ss':  list(range(0, 18)),                    # subject indices
+    #  'mem': '4G',                   # memory for qsub process
+    # },
+    {'N':   'scores_nonconcat',                  # job name
+     'Py':  'mysources_concabs_balanced_scores_nonconcat',  # Python script
      'Ss':  list(range(0, 18)),                    # subject indices
      'mem': '4G',                   # memory for qsub process
     },
