@@ -45,7 +45,7 @@ for i in range(0, 18):
 # # create times array
 times = np.arange(-300,900,4)
 
-reorg = dict.fromkeys(["LD", "sd"])
+reorg = dict()
 
 reorg["LD"] = []
 reorg["fruit"] = []
@@ -98,7 +98,7 @@ for task in p_clust.keys():
               {times[np.where(p_clust[task][roi] < 0.05)[0]]}")
         #scores[task][roi].shape = (18, 300)
 
-for task in ['LD', 'sd']:
+for task in scores.keys():
     i = 0
     for roi in scores[task].keys():
         sns.lineplot(x=times, y=np.vstack(scores[task][roi]).mean(axis=0), color=colors[i])
@@ -132,14 +132,6 @@ for task in ['LD', 'sd']:
         #plt.title(f"{task, roi} Semantic Category Decoding")
         plt.axhline(.5, color="k", linestyle="--", label="chance");
         # plt.legend();
-        mask = p_clust[task][roi] < 0.05/6
-        mask = mask.values.reshape(300)
-        first_vals = np.argwhere((~mask[:-1] & mask[1:]))  # Look for False-True transitions
-        last_vals = np.argwhere((mask[:-1] & ~mask[1:])) + 1  # Look for True-False transitions
-
-        for start, stop in zip(first_vals, last_vals):
-            plt.axvspan(times[start], times[stop], ymax=0.05, alpha=0.6, color="red",
-                        label="Bonferroni-correction per 6 ROIs")
         plt.tight_layout()
         plt.savefig(f"//imaging/hauk/users/fm02/final_dTtT/individual_ROIs/SemCat/Figures/{task}_{roi}_accuracy_balanced.png", format="png");
         plt.show();

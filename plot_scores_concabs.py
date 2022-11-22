@@ -39,7 +39,7 @@ kk2 = ['visual', 'hand', 'hear']
 scores = []
 
 for i in range(0, 18):
-    with open(f"/imaging/hauk/users/fm02/final_dTtT/individual_ROIs/SemCat/abs_balanced_scores_{i}.P" , "rb") as f:
+    with open(f"/imaging/hauk/users/fm02/final_dTtT/individual_ROIs/SemCat/abs_balanced_scores_{i}_C0001.P" , "rb") as f:
         scores.append(pickle.load(f))
 
 # # create times array
@@ -135,7 +135,7 @@ for task in ['LD', 'sd']:
             plt.axvspan(times[start], times[stop], ymax=0.05, alpha=0.6, color="red",
                         label="Bonferroni-correction per 6 ROIs")
         plt.tight_layout()
-        plt.savefig(f"//imaging/hauk/users/fm02/final_dTtT/individual_ROIs/SemCat/Figures/{task}_{roi}_accuracy_balanced.png", format="png");
+        #plt.savefig(f"//imaging/hauk/users/fm02/final_dTtT/individual_ROIs/SemCat/Figures/{task}_{roi}_accuracy_balanced.png", format="png");
         plt.show();
  
  

@@ -76,16 +76,21 @@ job_list = [
     #  'Py':  'mysources_concavs_confusion-matrix_slurm',  # Python script
     #  'Ss':  list(range(0, 18)),                    # subject indices
     #  'mem': '4G'},                   # memory for qsub process
-    # {'N':   'concVSabs',                  # job name
-    #  'Py':  'mysources_concabs_balanced_confusion-matrix_slurm',  # Python script
-    #  'Ss':  list(range(0, 18)),                    # subject indices
-    #  'mem': '4G',                   # memory for qsub process
-    # },
-    {'N':   'scores_nonconcat',                  # job name
-     'Py':  'mysources_concabs_balanced_scores_nonconcat',  # Python script
+    {'N':   'concVSabC01s',                  # job name
+     'Py':  'mysources_concabs_balanced_confusion-matrix_slurmC01',  # Python script
      'Ss':  list(range(0, 18)),                    # subject indices
      'mem': '4G',                   # memory for qsub process
     },
+    # {'N':   'scores_nonconcat',                  # job name
+    #  'Py':  'mysources_concabs_balanced_scores_nonconcat',  # Python script
+    #  'Ss':  list(range(0, 18)),                    # subject indices
+    #  'mem': '4G',                   # memory for qsub process
+    # },
+    # {'N':   'combined_balanced',                  # job name
+    #  'Py':  'mysources_concabs_balanced_combined_slurm',  # Python script
+    #  'Ss':  list(range(0, 18)),                    # subject indices
+    #  'mem': '4G',                   # memory for qsub process
+    # },
 	]  # node constraint for MF, just picked one
 
 # directory where python scripts are
