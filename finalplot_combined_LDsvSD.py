@@ -139,7 +139,7 @@ for roi in patterns_roi.keys():
 plt.axvline(0, color='k');
 plt.title('LD vs average(SD) RMS patterns')
 plt.legend(patterns_roi.keys());
-plt.savefig('/imaging/hauk/users/fm02/final_dTtT/combined_ROIs/LDvsSD/Figures/average_LDvsSD_patterns.png', format='png')
+#plt.savefig('/imaging/hauk/users/fm02/final_dTtT/combined_ROIs/LDvsSD/Figures/average_LDvsSD_patterns.png', format='png')
 plt.show();
 
 sns.lineplot(x=times, y=np.stack(scores['avg'].mean(axis=0)), color='black')

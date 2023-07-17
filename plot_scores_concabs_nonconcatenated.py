@@ -39,21 +39,26 @@ kk2 = ['visual', 'hand', 'hear']
 scores = []
 
 for i in range(0, 18):
-    with open(f"/imaging/hauk/users/fm02/final_dTtT/individual_ROIs/SemCat/abs_balanced_scores_{i}.P" , "rb") as f:
+    with open(f"/imaging/hauk/users/fm02/final_dTtT/individual_ROIs/SemCat/abs_balanced_scores_{i}_nonconcatenated.P" , "rb") as f:
         scores.append(pickle.load(f))
 
 # # create times array
 times = np.arange(-300,900,4)
 
-reorg = dict.fromkeys(["LD", "sd"])
+reorg = dict.fromkeys(["LD", 'fruit', 'milk', 'odour'])
 
 reorg["LD"] = []
-reorg["sd"] = []
+reorg["milk"] = []
+reorg["fruit"] = []
+reorg["odour"] = []
+
 
 for sub_score in scores:
     reorg["LD"].append(sub_score["LD"])
-    reorg["sd"].append(sub_score["sd"])
-    
+    reorg["milk"].append(sub_score["milk"])
+    reorg["fruit"].append(sub_score["fruit"])
+    reorg["odour"].append(sub_score["odour"])
+
 del(scores)
 scores = dict.fromkeys(reorg.keys())
 for task in reorg:
@@ -61,13 +66,26 @@ for task in reorg:
     
 del(reorg)
 
+scores['SD'] = dict.fromkeys(kkROI)
+for roi in kkROI:
+    scores['SD'][roi] = []
+
+for i in range(18):
+    for roi in kkROI:
+        # numpy array of size 3(tasks)*300(timepoints)
+        all_sds = np.array([scores['fruit'][roi][i], 
+                            scores['odour'][roi][i], 
+                            scores['milk'][roi][i]])
+        # average across SD tasks, for each participant
+        scores['SD'][roi].append(all_sds.mean(0))
+        
 p_clust = {}
 t_clust = {}
 clusters = {}
 p_values = {}
 H0 = {} 
 
-for task in scores.keys():
+for task in ['LD', 'SD']:
     p_clust[task] = pd.DataFrame(index=range(300), columns=kkROI)
     for roi in scores[task].keys():
         # Reshape data to what is equivalent to (n_samples, n_space, n_time)
@@ -92,7 +110,7 @@ for task in p_clust.keys():
               {times[np.where(p_clust[task][roi] < 0.05)[0]]}")
         #scores[task][roi].shape = (18, 300)
 
-for task in ['LD', 'sd']:
+for task in ['LD', 'SD']:
     i = 0
     for roi in scores[task].keys():
         fig, ax = plt.subplots(figsize=(6,4))
@@ -139,7 +157,7 @@ for task in ['LD', 'sd']:
         leg = plt.legend()
         ax.get_legend().set_visible(False) 
         plt.tight_layout()
-        # plt.savefig(f"//imaging/hauk/users/fm02/final_dTtT/individual_ROIs/SemCat/Figures/{task}_{roi}_accuracy_balanced_withtitle.png", format="png");
+        # plt.savefig(f"//imaging/hauk/users/fm02/final_dTtT/individual_ROIs/SemCat/Figures/{task}_{roi}_accuracy_balanced_nonconcatenated.png", format="png");
         plt.show();
  
  

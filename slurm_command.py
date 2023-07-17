@@ -77,7 +77,7 @@ job_list = [
     #  'Ss':  list(range(0, 18)),                    # subject indices
     #  'mem': '4G'},                   # memory for qsub process
     {'N':   'concVSabC01s',                  # job name
-     'Py':  'mysources_concabs_balanced_confusion-matrix_slurmC01',  # Python script
+     'Py':  'mysources_semcat_balanced_crossLDSD_confusion-matrix_slurm',  # Python script
      'Ss':  list(range(0, 18)),                    # subject indices
      'mem': '4G',                   # memory for qsub process
     },

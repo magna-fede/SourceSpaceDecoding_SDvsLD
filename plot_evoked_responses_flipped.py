@@ -254,11 +254,11 @@ for sub in np.arange(0, 18):
 #     pickle.dump(df_to_export,outfile)
 
 df_to_export = pd.DataFrame(evoked_participants)
-with open("/imaging/hauk/users/fm02/first_output/evoked_responses/0804_evoked_AVGacrossROI.P", 'wb') as outfile:
+with open("/imaging/hauk/users/fm02/first_output/evoked_responses/2706_evoked_AVGacrossROI.P", 'wb') as outfile:
     pickle.dump(df_to_export,outfile)
 
 df_to_export2 = pd.DataFrame(flipped_participants)
-with open("/imaging/hauk/users/fm02/first_output/evoked_responses/0804_evoked_flipped.P", 'wb') as outfile:
+with open("/imaging/hauk/users/fm02/first_output/evoked_responses/2706_evoked_flipped.P", 'wb') as outfile:
     pickle.dump(df_to_export2,outfile)
 
 ###############################################################################
