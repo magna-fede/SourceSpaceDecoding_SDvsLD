@@ -135,11 +135,12 @@ for task in ['LD', 'sd']:
         for start, stop in zip(first_vals, last_vals):
             plt.axvspan(times[start], times[stop], ymax=0.05, alpha=0.6, color="red",
                         label="Bonferroni-correction per 6 ROIs")
-        plt.title(f"{roi}")
+        plt.title(f"{roi}", fontsize="20")
+        plt.ylim([0.44, 0.58])
         leg = plt.legend()
         ax.get_legend().set_visible(False) 
         plt.tight_layout()
-        # plt.savefig(f"//imaging/hauk/users/fm02/final_dTtT/individual_ROIs/SemCat/Figures/{task}_{roi}_accuracy_balanced_withtitle.png", format="png");
+        # plt.savefig(f"//imaging/hauk/users/fm02/final_dTtT/individual_ROIs/SemCat/Figures/{task}_{roi}_accuracy_balanced_withtitle_font20.png", format="png");
         plt.show();
  
  

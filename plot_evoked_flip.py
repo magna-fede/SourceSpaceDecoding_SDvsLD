@@ -123,7 +123,7 @@ for roi in kkROI:
         i+=1
     plt.axvline(0, color='k');
     plt.axhline(0, color='k', alpha=0.3, linewidth = 0.5);
-    plt.title(f"{roi}")
+    plt.title(f"{roi}", fontsize="20")
     # handles, labels = plt.gca().get_legend_handles_labels()
     # labels = ['LD', 'SD 1 - "milk"', 'SD 2 - "fruit"', 'SD 3 - "odour"', 'SD']
     # by_label = dict(zip(labels, handles))
@@ -131,7 +131,7 @@ for roi in kkROI:
     leg = plt.legend()
     ax.get_legend().set_visible(False) 
     plt.tight_layout()
-    # plt.savefig(f'/imaging/hauk/users/fm02/final_dTtT/evoked/flip_avg/flipped evoked_{roi}_nolegend.png', format='png')    
+    # plt.savefig(f'/imaging/hauk/users/fm02/final_dTtT/evoked/flip_avg/flipped evoked_{roi}_nolegend_font20.png', format='png')    
     plt.show()
 
 # run only legend = ... line to plot the legend only
